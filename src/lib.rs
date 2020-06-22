@@ -52,10 +52,9 @@ impl LSSDriver {
     }
 
     pub fn disable_motion_profile(&mut self, id: u8, motion_profile: bool) -> Result<(), Box<dyn Error>> {
-        let message = format!("#{}EM0\r", id);
+        let message = format!("#{}EM{}\r", id, motion_profile as u8);
         let bytes = message.as_bytes();
         self.port.write_all(bytes)?;
         Ok(())
     }
 }
-
