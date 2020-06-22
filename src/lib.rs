@@ -27,6 +27,15 @@ impl LSSDriver {
         })
     }
 
+    pub fn with_baud_rate(port: &str, baud_rate: u32) -> Result<LSSDriver, Box<dyn Error>> {
+        let mut settings = serialport::SerialPortSettings::default();
+        settings.baud_rate = baud_rate;
+        let serial_port = serialport::open_with_settings(port, &settings)?;
+        Ok(LSSDriver {
+            port: serial_port
+        })
+    }
+
     pub fn set_color(&mut self, id: u8, color: LedColor) -> Result<(), Box<dyn Error>> {
         let message = format!("#{}LED{}\r", id, color as u8);
         let bytes = message.as_bytes();
