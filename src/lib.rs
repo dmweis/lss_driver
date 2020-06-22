@@ -46,9 +46,7 @@ impl LSSDriver {
         let mut settings = serialport::SerialPortSettings::default();
         settings.baud_rate = 115200;
         let serial_port = serialport::open_with_settings(port, &settings)?;
-        Ok(LSSDriver {
-            port: serial_port
-        })
+        Ok(LSSDriver { port: serial_port })
     }
 
     /// Create new driver on a serial port with custom baud rate
@@ -68,9 +66,7 @@ impl LSSDriver {
         let mut settings = serialport::SerialPortSettings::default();
         settings.baud_rate = baud_rate;
         let serial_port = serialport::open_with_settings(port, &settings)?;
-        Ok(LSSDriver {
-            port: serial_port
-        })
+        Ok(LSSDriver { port: serial_port })
     }
 
     /// set color for driver with id
@@ -119,7 +115,11 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `motion_profile` - set motion profile on/off
-    pub fn disable_motion_profile(&mut self, id: u8, motion_profile: bool) -> Result<(), Box<dyn Error>> {
+    pub fn disable_motion_profile(
+        &mut self,
+        id: u8,
+        motion_profile: bool,
+    ) -> Result<(), Box<dyn Error>> {
         let message = format!("#{}EM{}\r", id, motion_profile as u8);
         let bytes = message.as_bytes();
         self.port.write_all(bytes)?;
