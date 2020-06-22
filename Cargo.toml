@@ -2,12 +2,17 @@
 name = "iron_lss"
 version = "0.1.0"
 authors = ["David Michael Weis <dweis7@gmail.com>"]
+description = "Driver for Lynxmotion LSS servos"
 edition = "2018"
+repository = "https://github.com/dmweis/iron_lss"
+readme = "README.md"
+license = "MIT OR Apache-2.0"
+keywords = ["LSS", "Lynxmotion"]
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-serialport = "3.3.0"
+serialport = "3.3"
 
 
 [dev-dependencies]
