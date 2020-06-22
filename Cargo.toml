@@ -1,5 +1,5 @@
 [package]
-name = "IronLSS"
+name = "iron_lss"
 version = "0.1.0"
 authors = ["David Michael Weis <dweis7@gmail.com>"]
 edition = "2018"
@@ -8,3 +8,7 @@ edition = "2018"
 
 [dependencies]
 serialport = "3.3.0"
+
+
+[dev-dependencies]
+looprate = { git = "https://github.com/dmweis/looprate" }
