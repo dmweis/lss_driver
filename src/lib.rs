@@ -9,6 +9,9 @@
  */
 use serialport;
 use std::error::Error;
+use std::io::BufReader;
+use std::io::BufRead;
+use std::str;
 
 #[derive(Copy, Clone)]
 pub enum LedColor {
@@ -25,6 +28,7 @@ pub enum LedColor {
 /// Driver for the LSS servo
 pub struct LSSDriver {
     port: Box<dyn serialport::SerialPort>,
+    buf_reader: Box<dyn BufRead>,
 }
 
 impl LSSDriver {
@@ -45,8 +49,13 @@ impl LSSDriver {
     pub fn new(port: &str) -> Result<LSSDriver, Box<dyn Error>> {
         let mut settings = serialport::SerialPortSettings::default();
         settings.baud_rate = 115200;
+        settings.timeout = std::time::Duration::from_millis(100);
         let serial_port = serialport::open_with_settings(port, &settings)?;
-        Ok(LSSDriver { port: serial_port })
+        let port_clone = serial_port.try_clone()?;
+        Ok(LSSDriver { 
+            port: serial_port,
+            buf_reader: Box::new(BufReader::new(port_clone)),
+        })
     }
 
     /// Create new driver on a serial port with custom baud rate
@@ -65,8 +74,13 @@ impl LSSDriver {
     pub fn with_baud_rate(port: &str, baud_rate: u32) -> Result<LSSDriver, Box<dyn Error>> {
         let mut settings = serialport::SerialPortSettings::default();
         settings.baud_rate = baud_rate;
+        settings.timeout = std::time::Duration::from_millis(100);
         let serial_port = serialport::open_with_settings(port, &settings)?;
-        Ok(LSSDriver { port: serial_port })
+        let port_clone = serial_port.try_clone()?;
+        Ok(LSSDriver {
+            port: serial_port,
+            buf_reader: Box::new(BufReader::new(port_clone)),
+         })
     }
 
     /// set color for driver with id
@@ -148,5 +162,27 @@ impl LSSDriver {
         let bytes = message.as_bytes();
         self.port.write_all(bytes)?;
         Ok(())
+    }
+
+    /// Read voltage of motor in volts
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to read from
+    pub fn read_voltage(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        // response message looks like *5QV11200<cr>
+        // Response is in mV
+        let message = format!("#{}QV\r", id);
+        let bytes = message.as_bytes();
+        self.port.write_all(bytes)?;
+        let mut buffer = vec![];
+        self.buf_reader.read_until('\r' as u8, &mut buffer)?;
+        // Not very efficient or safe. But works
+        let text = str::from_utf8(&buffer)?
+                        .split("QV")
+                        .last()
+                        .ok_or("Response message is empty")?
+                        .trim();
+        Ok(text.parse::<f32>()? / 1000.0)
     }
 }
