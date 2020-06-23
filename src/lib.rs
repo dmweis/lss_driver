@@ -164,6 +164,28 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Read current position of motor in degrees
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to read from
+    pub fn read_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        // response message looks like *5QDT6783<cr>
+        // Response is in 10s of degrees
+        let message = format!("#{}QDT\r", id);
+        let bytes = message.as_bytes();
+        self.port.write_all(bytes)?;
+        let mut buffer = vec![];
+        self.buf_reader.read_until('\r' as u8, &mut buffer)?;
+        // Not very efficient or safe. But works
+        let text = str::from_utf8(&buffer)?
+            .split("QDT")
+            .last()
+            .ok_or("Response message is empty")?
+            .trim();
+        Ok(text.parse::<f32>()? / 10.0)
+    }
+
     /// Read voltage of motor in volts
     ///
     /// # Arguments
@@ -180,6 +202,51 @@ impl LSSDriver {
         // Not very efficient or safe. But works
         let text = str::from_utf8(&buffer)?
             .split("QV")
+            .last()
+            .ok_or("Response message is empty")?
+            .trim();
+        Ok(text.parse::<f32>()? / 1000.0)
+    }
+
+    /// Read temperature of motor in celsius
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to read from
+    pub fn read_temperature(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        // response message looks like *5QT441<cr>
+        // Response is in 10s of celsius
+        // 441 would be 44.1 celsius
+        let message = format!("#{}QT\r", id);
+        let bytes = message.as_bytes();
+        self.port.write_all(bytes)?;
+        let mut buffer = vec![];
+        self.buf_reader.read_until('\r' as u8, &mut buffer)?;
+        // Not very efficient or safe. But works
+        let text = str::from_utf8(&buffer)?
+            .split("QT")
+            .last()
+            .ok_or("Response message is empty")?
+            .trim();
+        Ok(text.parse::<f32>()? / 10.0)
+    }
+
+    /// Read current of motor in Amps
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to read from
+    pub fn read_current(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        // response message looks like *5QT441<cr>
+        // Response is in mA
+        let message = format!("#{}QC\r", id);
+        let bytes = message.as_bytes();
+        self.port.write_all(bytes)?;
+        let mut buffer = vec![];
+        self.buf_reader.read_until('\r' as u8, &mut buffer)?;
+        // Not very efficient or safe. But works
+        let text = str::from_utf8(&buffer)?
+            .split("QC")
             .last()
             .ok_or("Response message is empty")?
             .trim();

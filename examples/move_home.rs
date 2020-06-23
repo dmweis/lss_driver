@@ -13,5 +13,5 @@ struct Args {
 fn main() {
     let args: Args = Args::parse();
     let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
-    println!("Voltage is {}V", driver.read_voltage(5).unwrap());
+    driver.move_to_position(5, 0.0).unwrap();
 }
