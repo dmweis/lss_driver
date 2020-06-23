@@ -19,5 +19,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
     let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
     driver.move_to_position(5, args.position).await?;
+    driver.set_color(5, iron_lss::LedColor::Magenta).await?;
     Ok(())
 }
