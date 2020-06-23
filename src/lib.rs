@@ -9,8 +9,8 @@
  */
 use serialport;
 use std::error::Error;
-use std::io::BufReader;
 use std::io::BufRead;
+use std::io::BufReader;
 use std::str;
 
 #[derive(Copy, Clone)]
@@ -52,7 +52,7 @@ impl LSSDriver {
         settings.timeout = std::time::Duration::from_millis(100);
         let serial_port = serialport::open_with_settings(port, &settings)?;
         let port_clone = serial_port.try_clone()?;
-        Ok(LSSDriver { 
+        Ok(LSSDriver {
             port: serial_port,
             buf_reader: Box::new(BufReader::new(port_clone)),
         })
@@ -80,7 +80,7 @@ impl LSSDriver {
         Ok(LSSDriver {
             port: serial_port,
             buf_reader: Box::new(BufReader::new(port_clone)),
-         })
+        })
     }
 
     /// set color for driver with id
@@ -179,10 +179,10 @@ impl LSSDriver {
         self.buf_reader.read_until('\r' as u8, &mut buffer)?;
         // Not very efficient or safe. But works
         let text = str::from_utf8(&buffer)?
-                        .split("QV")
-                        .last()
-                        .ok_or("Response message is empty")?
-                        .trim();
+            .split("QV")
+            .last()
+            .ok_or("Response message is empty")?
+            .trim();
         Ok(text.parse::<f32>()? / 1000.0)
     }
 }
