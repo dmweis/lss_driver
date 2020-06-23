@@ -64,7 +64,7 @@ const TIMEOUT: u64 = 10;
 
 /// Driver for the LSS servo
 pub struct LSSDriver {
-    port: tokio_util::codec::Framed<tokio_serial::Serial, LssCodec>,
+    framed_port: tokio_util::codec::Framed<tokio_serial::Serial, LssCodec>,
 }
 
 impl LSSDriver {
@@ -88,7 +88,7 @@ impl LSSDriver {
         settings.timeout = std::time::Duration::from_millis(TIMEOUT);
         let serial_port = tokio_serial::Serial::from_path(port, &settings)?;
         Ok(LSSDriver {
-            port: LssCodec.framed(serial_port),
+            framed_port: LssCodec.framed(serial_port),
         })
     }
 
@@ -111,7 +111,7 @@ impl LSSDriver {
         settings.timeout = std::time::Duration::from_millis(TIMEOUT);
         let serial_port = tokio_serial::Serial::from_path(port, &settings)?;
         Ok(LSSDriver {
-            port: LssCodec.framed(serial_port),
+            framed_port: LssCodec.framed(serial_port),
         })
     }
 
@@ -123,7 +123,7 @@ impl LSSDriver {
     /// * `color` - Color to set
     pub async fn set_color(&mut self, id: u8, color: LedColor) -> Result<(), Box<dyn Error>> {
         let message = format!("#{}LED{}\r", id, color as u8);
-        self.port.send(message).await?;
+        self.framed_port.send(message).await?;
         Ok(())
     }
 
@@ -145,7 +145,7 @@ impl LSSDriver {
     pub async fn move_to_position(&mut self, id: u8, position: f32) -> Result<(), Box<dyn Error>> {
         let angle = (position * 10.0).round() as i32;
         let message = format!("#{}D{}\r", id, angle);
-        self.port.send(message).await?;
+        self.framed_port.send(message).await?;
         Ok(())
     }
 
@@ -165,7 +165,7 @@ impl LSSDriver {
         motion_profile: bool,
     ) -> Result<(), Box<dyn Error>> {
         let message = format!("#{}EM{}\r", id, motion_profile as u8);
-        self.port.send(message).await?;
+        self.framed_port.send(message).await?;
         Ok(())
     }
 
@@ -176,7 +176,7 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     pub async fn limp(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
         let message = format!("#{}L\r", id);
-        self.port.send(message).await?;
+        self.framed_port.send(message).await?;
         Ok(())
     }
 
@@ -187,7 +187,7 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     pub async fn halt_hold(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
         let message = format!("#{}H\r", id);
-        self.port.send(message).await?;
+        self.framed_port.send(message).await?;
         Ok(())
     }
 
@@ -200,8 +200,8 @@ impl LSSDriver {
         // response message looks like *5QDT6783<cr>
         // Response is in 10s of degrees
         let message = format!("#{}QDT\r", id);
-        self.port.send(message).await?;
-        let response = self.port.next().await.ok_or("failed reading from port")??;
+        self.framed_port.send(message).await?;
+        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
         let text = response
             .split("QDT")
             .last()
@@ -219,8 +219,8 @@ impl LSSDriver {
         // response message looks like *5QV11200<cr>
         // Response is in mV
         let message = format!("#{}QV\r", id);
-        self.port.send(message).await?;
-        let response = self.port.next().await.ok_or("failed reading from port")??;
+        self.framed_port.send(message).await?;
+        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
         let text = response
             .split("QV")
             .last()
@@ -239,8 +239,8 @@ impl LSSDriver {
         // Response is in 10s of celsius
         // 441 would be 44.1 celsius
         let message = format!("#{}QT\r", id);
-        self.port.send(message).await?;
-        let response = self.port.next().await.ok_or("failed reading from port")??;
+        self.framed_port.send(message).await?;
+        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
         let text = response
             .split("QT")
             .last()
@@ -258,8 +258,8 @@ impl LSSDriver {
         // response message looks like *5QT441<cr>
         // Response is in mA
         let message = format!("#{}QC\r", id);
-        self.port.send(message).await?;
-        if let Some(data) = self.port.next().await {
+        self.framed_port.send(message).await?;
+        if let Some(data) = self.framed_port.next().await {
             let text = data?;
             let text = text
                 .split("QC")
