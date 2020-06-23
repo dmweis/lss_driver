@@ -1,5 +1,5 @@
 use iron_lss;
-use std::thread::sleep;
+use async_std::task::sleep;
 use std::time::Duration;
 use clap::Clap;
 
@@ -12,7 +12,8 @@ struct Args {
     port: String,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
     let colors = vec![
         iron_lss::LedColor::Off,
@@ -27,8 +28,8 @@ fn main() {
     let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
     loop {
         for color in &colors {
-            driver.set_color(5, *color).unwrap();
-            sleep(Duration::from_secs_f32(0.3));
+            driver.set_color(5, *color).await?;
+            sleep(Duration::from_secs_f32(0.3)).await;
         }
     }
 }

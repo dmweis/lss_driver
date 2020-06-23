@@ -14,8 +14,10 @@ struct Args {
     position: f32,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
     let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
-    driver.move_to_position(5, args.position).unwrap();
+    driver.move_to_position(5, args.position).await?;
+    Ok(())
 }
