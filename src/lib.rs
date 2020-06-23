@@ -25,6 +25,8 @@ pub enum LedColor {
     White = 7,
 }
 
+const TIMEOUT: u64 = 5;
+
 /// Driver for the LSS servo
 pub struct LSSDriver {
     port: Box<dyn serialport::SerialPort>,
@@ -49,7 +51,7 @@ impl LSSDriver {
     pub fn new(port: &str) -> Result<LSSDriver, Box<dyn Error>> {
         let mut settings = serialport::SerialPortSettings::default();
         settings.baud_rate = 115200;
-        settings.timeout = std::time::Duration::from_millis(100);
+        settings.timeout = std::time::Duration::from_millis(TIMEOUT);
         let serial_port = serialport::open_with_settings(port, &settings)?;
         let port_clone = serial_port.try_clone()?;
         Ok(LSSDriver {
@@ -74,7 +76,7 @@ impl LSSDriver {
     pub fn with_baud_rate(port: &str, baud_rate: u32) -> Result<LSSDriver, Box<dyn Error>> {
         let mut settings = serialport::SerialPortSettings::default();
         settings.baud_rate = baud_rate;
-        settings.timeout = std::time::Duration::from_millis(100);
+        settings.timeout = std::time::Duration::from_millis(TIMEOUT);
         let serial_port = serialport::open_with_settings(port, &settings)?;
         let port_clone = serial_port.try_clone()?;
         Ok(LSSDriver {
