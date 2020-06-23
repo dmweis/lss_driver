@@ -107,7 +107,7 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     /// * `position` - Absolute position in degrees
     ///
-    /// ```
+    /// ```no_run
     /// use iron_lss::LSSDriver;
     /// let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
     /// driver.move_to_position(5, 180.0).unwrap();
