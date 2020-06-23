@@ -159,7 +159,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `motion_profile` - set motion profile on/off
-    pub async fn disable_motion_profile(
+    pub async fn set_motion_profile(
         &mut self,
         id: u8,
         motion_profile: bool,
@@ -167,6 +167,48 @@ impl LSSDriver {
         let message = format!("#{}EM{}\r", id, motion_profile as u8);
         self.framed_port.send(message).await?;
         Ok(())
+    }
+
+    /// Set filter position count
+    ///
+    /// Change the Filter Position Count value for this session.
+    /// Affects motion only when motion profile is disabled (EM0)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `filter_position_count` - default if 5
+    pub async fn set_filter_position_count(
+        &mut self,
+        id: u8,
+        filter_position_count: u8,
+    ) -> Result<(), Box<dyn Error>> {
+        let message = format!("#{}FPC{}\r", id, filter_position_count);
+        self.framed_port.send(message).await?;
+        Ok(())
+    }
+
+    /// Read filter position count
+    ///
+    /// Affects motion only when motion profile is disabled (EM0)
+    /// Default is 5
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to read from
+    pub async fn read_filter_position_count(
+        &mut self,
+        id: u8,
+    ) -> Result<u8, Box<dyn Error>> {
+        let message = format!("#{}QFPC\r", id);
+        self.framed_port.send(message).await?;
+        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
+        let text = response
+            .split("QFPC")
+            .last()
+            .ok_or("Response message is empty")?
+            .trim();
+        Ok(text.parse::<u8>()?)
     }
 
     /// Disables power to motor allowing it to be back driven
