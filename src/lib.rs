@@ -44,7 +44,7 @@ impl LSSDriver {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use iron_lss::LSSDriver;
     /// let mut driver = LSSDriver::new("COM1").unwrap();
     /// ```
@@ -69,7 +69,7 @@ impl LSSDriver {
     ///
     /// # Example
     ///
-    /// ```
+    /// ```no_run
     /// use iron_lss::LSSDriver;
     /// let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
     /// ```
