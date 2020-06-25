@@ -17,11 +17,54 @@ use futures::stream::StreamExt;
 use bytes::{BytesMut, BufMut};
 // use futures_util::sink::SinkExt;
 
+struct LssCommand {
+    message: String,
+}
+
+impl LssCommand {
+    fn with_param(id: u8, cmd: &str, val: i32) -> LssCommand {
+        LssCommand {
+            message: format!("#{}{}{}\r", id, cmd, val),
+        }
+    }
+
+    fn simple(id: u8, cmd: &str) -> LssCommand {
+        LssCommand {
+            message: format!("#{}{}\r", id, cmd),
+        }
+    }
+
+    fn as_bytes(&self) -> &[u8] {
+        self.message.as_bytes()
+    }
+}
+
+struct LssResponse {
+    message: String
+}
+
+impl LssResponse {
+    fn new(message: String) -> LssResponse {
+        LssResponse {
+            message
+        }
+    }
+
+    fn separate(&self, separator: &str) -> Result<(u8, i32), Box<dyn Error>> {
+        let mut split = self
+            .message[1..]
+            .trim()
+            .split(separator);
+        let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
+        let value: i32 = split.next().ok_or("Failed to extract value")?.parse()?;
+        Ok((id, value))
+    }
+}
 
 struct LssCodec;
 
 impl Decoder for LssCodec {
-    type Item = String;
+    type Item = LssResponse;
     type Error = io::Error;
 
     fn decode(&mut self, src: &mut BytesMut) -> Result<Option<Self::Item>, Self::Error> {
@@ -29,7 +72,7 @@ impl Decoder for LssCodec {
         if let Some(n) = command_break {
             let line = src.split_to(n + 1);
             return match str::from_utf8(line.as_ref()) {
-                Ok(s) => Ok(Some(s.to_string())),
+                Ok(s) => Ok(Some(LssResponse::new(s.to_owned()))),
                 Err(_) => Err(io::Error::new(io::ErrorKind::Other, "Invalid String")),
             };
         }
@@ -37,12 +80,13 @@ impl Decoder for LssCodec {
     }
 }
 
-impl Encoder<String> for LssCodec {
+impl Encoder<LssCommand> for LssCodec {
     type Error = io::Error;
 
-    fn encode(&mut self, data: String, buf: &mut BytesMut) -> Result<(), io::Error> {
-        buf.reserve(data.len());
-        buf.put(data.as_bytes());
+    fn encode(&mut self, data: LssCommand, buf: &mut BytesMut) -> Result<(), io::Error> {
+        let msg = data.as_bytes();
+        buf.reserve(msg.len());
+        buf.put(msg);
         Ok(())
     }
 }
@@ -115,6 +159,7 @@ impl LSSDriver {
         })
     }
 
+
     /// set color for driver with id
     ///
     /// # Arguments
@@ -122,8 +167,7 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     /// * `color` - Color to set
     pub async fn set_color(&mut self, id: u8, color: LedColor) -> Result<(), Box<dyn Error>> {
-        let message = format!("#{}LED{}\r", id, color as u8);
-        self.framed_port.send(message).await?;
+        self.framed_port.send(LssCommand::with_param(id, "LED", color as i32)).await?;
         Ok(())
     }
 
@@ -144,8 +188,7 @@ impl LSSDriver {
     /// ```
     pub async fn move_to_position(&mut self, id: u8, position: f32) -> Result<(), Box<dyn Error>> {
         let angle = (position * 10.0).round() as i32;
-        let message = format!("#{}D{}\r", id, angle);
-        self.framed_port.send(message).await?;
+        self.framed_port.send(LssCommand::with_param(id, "D", angle)).await?;
         Ok(())
     }
 
@@ -164,8 +207,7 @@ impl LSSDriver {
         id: u8,
         motion_profile: bool,
     ) -> Result<(), Box<dyn Error>> {
-        let message = format!("#{}EM{}\r", id, motion_profile as u8);
-        self.framed_port.send(message).await?;
+        self.framed_port.send(LssCommand::with_param(id, "EM", motion_profile as i32)).await?;
         Ok(())
     }
 
@@ -183,8 +225,7 @@ impl LSSDriver {
         id: u8,
         filter_position_count: u8,
     ) -> Result<(), Box<dyn Error>> {
-        let message = format!("#{}FPC{}\r", id, filter_position_count);
-        self.framed_port.send(message).await?;
+        self.framed_port.send(LssCommand::with_param(id, "FPC", filter_position_count as i32)).await?;
         Ok(())
     }
 
@@ -200,15 +241,10 @@ impl LSSDriver {
         &mut self,
         id: u8,
     ) -> Result<u8, Box<dyn Error>> {
-        let message = format!("#{}QFPC\r", id);
-        self.framed_port.send(message).await?;
-        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
-        let text = response
-            .split("QFPC")
-            .last()
-            .ok_or("Response message is empty")?
-            .trim();
-        Ok(text.parse::<u8>()?)
+        self.framed_port.send(LssCommand::simple(id, "QFPC")).await?;
+        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let (_, value) = response.separate("QFPC")?;
+        Ok(value as u8)
     }
 
     /// Disables power to motor allowing it to be back driven
@@ -217,8 +253,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     pub async fn limp(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
-        let message = format!("#{}L\r", id);
-        self.framed_port.send(message).await?;
+        self.framed_port.send(LssCommand::simple(id, "L")).await?;
         Ok(())
     }
 
@@ -228,8 +263,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     pub async fn halt_hold(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
-        let message = format!("#{}H\r", id);
-        self.framed_port.send(message).await?;
+        self.framed_port.send(LssCommand::simple(id, "H")).await?;
         Ok(())
     }
 
@@ -241,15 +275,10 @@ impl LSSDriver {
     pub async fn read_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         // response message looks like *5QDT6783<cr>
         // Response is in 10s of degrees
-        let message = format!("#{}QDT\r", id);
-        self.framed_port.send(message).await?;
-        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
-        let text = response
-            .split("QDT")
-            .last()
-            .ok_or("Response message is empty")?
-            .trim();
-        Ok(text.parse::<f32>()? / 10.0)
+        self.framed_port.send(LssCommand::simple(id, "QDT")).await?;
+        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let (_, value) = response.separate("QDT")?;
+        Ok(value as f32 / 10.0)
     }
 
     /// Read voltage of motor in volts
@@ -260,15 +289,10 @@ impl LSSDriver {
     pub async fn read_voltage(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         // response message looks like *5QV11200<cr>
         // Response is in mV
-        let message = format!("#{}QV\r", id);
-        self.framed_port.send(message).await?;
-        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
-        let text = response
-            .split("QV")
-            .last()
-            .ok_or("Response message is empty")?
-            .trim();
-        Ok(text.parse::<f32>()? / 1000.0)
+        self.framed_port.send(LssCommand::simple(id, "QV")).await?;
+        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let (_, value) = response.separate("QV")?;
+        Ok(value as f32 / 1000.0)
     }
 
     /// Read temperature of motor in celsius
@@ -280,15 +304,10 @@ impl LSSDriver {
         // response message looks like *5QT441<cr>
         // Response is in 10s of celsius
         // 441 would be 44.1 celsius
-        let message = format!("#{}QT\r", id);
-        self.framed_port.send(message).await?;
-        let response = self.framed_port.next().await.ok_or("failed reading from port")??;
-        let text = response
-            .split("QT")
-            .last()
-            .ok_or("Response message is empty")?
-            .trim();
-        Ok(text.parse::<f32>()? / 10.0)
+        self.framed_port.send(LssCommand::simple(id, "QT")).await?;
+        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let (_, value) = response.separate("QT")?;
+        Ok(value as f32 / 10.0)
     }
 
     /// Read current of motor in Amps
@@ -299,18 +318,9 @@ impl LSSDriver {
     pub async fn read_current(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         // response message looks like *5QT441<cr>
         // Response is in mA
-        let message = format!("#{}QC\r", id);
-        self.framed_port.send(message).await?;
-        if let Some(data) = self.framed_port.next().await {
-            let text = data?;
-            let text = text
-                .split("QC")
-                .last()
-                .ok_or("Response message is empty")?
-                .trim();
-            Ok(text.parse::<f32>()? / 1000.0)
-        } else {
-            Err("Failed reading")?
-        }
+        self.framed_port.send(LssCommand::simple(id, "QC")).await?;
+        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let (_, value) = response.separate("QC")?;
+        Ok(value as f32 / 1000.0)
     }
 }
