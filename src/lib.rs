@@ -8,14 +8,9 @@
  *
  */
 use tokio_util::codec::{Decoder, Encoder};
-use std::error::Error;
-use std::str;
-use std::io;
-use futures::SinkExt;
-use futures::stream::StreamExt;
-
+use std::{ str, io, error::Error };
+use futures::{ SinkExt, StreamExt };
 use bytes::{BytesMut, BufMut};
-// use futures_util::sink::SinkExt;
 
 struct LssCommand {
     message: String,
