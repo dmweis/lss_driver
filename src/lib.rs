@@ -177,9 +177,11 @@ impl LSSDriver {
     ///
     /// ```no_run
     /// use iron_lss::LSSDriver;
-    /// let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
-    /// driver.move_to_position(5, 180.0).unwrap();
-    /// driver.move_to_position(5, 480.0).unwrap();
+    /// async fn async_main(){
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.move_to_position(5, 180.0).await;
+    ///     driver.move_to_position(5, 480.0).await;
+    /// }
     /// ```
     pub async fn move_to_position(&mut self, id: u8, position: f32) -> Result<(), Box<dyn Error>> {
         let angle = (position * 10.0).round() as i32;
