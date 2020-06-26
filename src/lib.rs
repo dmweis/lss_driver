@@ -208,6 +208,40 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Set angular stiffness
+    /// 
+    /// Read more about [Angular stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularStiffness28AS29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `angular_stiffness` - value for angular stiffness (-10 to 10)
+    pub async fn set_angular_stiffness(
+        &mut self,
+        id: u8,
+        angular_stiffness: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        self.framed_port.send(LssCommand::with_param(id, "AS", angular_stiffness)).await?;
+        Ok(())
+    }
+
+    /// Set angular holding stiffness
+    /// 
+    /// Read more about [Angular holding stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularHoldingStiffness28AH29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `angular_holding` - value for angular holding stiffness (-10 to 10)
+    pub async fn set_angular_holding(
+        &mut self,
+        id: u8,
+        angular_holding: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        self.framed_port.send(LssCommand::with_param(id, "AH", angular_holding)).await?;
+        Ok(())
+    }
+
     /// Set filter position count
     ///
     /// Change the Filter Position Count value for this session.

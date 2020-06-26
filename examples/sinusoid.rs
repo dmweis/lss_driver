@@ -21,9 +21,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
     driver.set_color(5, iron_lss::LedColor::Green).await?;
     driver.set_motion_profile(5, false).await?;
+    driver.set_angular_holding(5, -2).await?;
+    driver.set_angular_stiffness(5, -2).await?;
+    driver.set_filter_position_count(5, 4).await?;
     loop {
         rate.wait();
-        driver.move_to_position(5, (start.elapsed().as_secs_f32()).sin() * 90.0).await?;
+        driver.move_to_position(5, (start.elapsed().as_secs_f32() * 3.0).sin() * 90.0).await?;
         loop_rate_counter.tick();
     }
 }
