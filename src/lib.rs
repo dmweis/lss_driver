@@ -154,6 +154,10 @@ impl LSSDriver {
         })
     }
 
+    async fn recv(&mut self) -> Result<LssResponse, Box<dyn Error>> {
+        let response = self.framed_port.next().await.ok_or("Failed receive message")??;
+        Ok(response)
+    }
 
     /// set color for driver with id
     ///
@@ -273,7 +277,7 @@ impl LSSDriver {
         id: u8,
     ) -> Result<u8, Box<dyn Error>> {
         self.framed_port.send(LssCommand::simple(id, "QFPC")).await?;
-        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let response = self.recv().await?;
         let (_, value) = response.separate("QFPC")?;
         Ok(value as u8)
     }
@@ -307,7 +311,7 @@ impl LSSDriver {
         // response message looks like *5QDT6783<cr>
         // Response is in 10s of degrees
         self.framed_port.send(LssCommand::simple(id, "QDT")).await?;
-        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let response = self.recv().await?;
         let (_, value) = response.separate("QDT")?;
         Ok(value as f32 / 10.0)
     }
@@ -321,7 +325,7 @@ impl LSSDriver {
         // response message looks like *5QV11200<cr>
         // Response is in mV
         self.framed_port.send(LssCommand::simple(id, "QV")).await?;
-        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let response = self.recv().await?;
         let (_, value) = response.separate("QV")?;
         Ok(value as f32 / 1000.0)
     }
@@ -336,7 +340,7 @@ impl LSSDriver {
         // Response is in 10s of celsius
         // 441 would be 44.1 celsius
         self.framed_port.send(LssCommand::simple(id, "QT")).await?;
-        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let response = self.recv().await?;
         let (_, value) = response.separate("QT")?;
         Ok(value as f32 / 10.0)
     }
@@ -350,7 +354,7 @@ impl LSSDriver {
         // response message looks like *5QT441<cr>
         // Response is in mA
         self.framed_port.send(LssCommand::simple(id, "QC")).await?;
-        let response = self.framed_port.next().await.ok_or("Failed to parse response")??;
+        let response = self.recv().await?;
         let (_, value) = response.separate("QC")?;
         Ok(value as f32 / 1000.0)
     }
