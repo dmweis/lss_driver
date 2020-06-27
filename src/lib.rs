@@ -339,6 +339,45 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Set filter position count
+    ///
+    /// Change the Filter Position Count value for this session.
+    /// Affects motion only when motion profile is disabled (EM0)
+    /// 
+    /// more info at the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HFilterPositionCount28FPC29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `filter_position_count` - default if 5
+    pub async fn set_filter_position_count(
+        &mut self,
+        id: u8,
+        filter_position_count: u8,
+    ) -> Result<(), Box<dyn Error>> {
+        self.driver.send(LssCommand::with_param(id, "FPC", filter_position_count as i32)).await?;
+        Ok(())
+    }
+
+    /// Query filter position count
+    ///
+    /// Query the Filter Position Count value.
+    /// Affects motion only when motion profile is disabled (EM0)
+    /// 
+    /// more info at the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HFilterPositionCount28FPC29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_filter_position_count(
+        &mut self,
+        id: u8) -> Result<u8, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QFPC")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QFPC")?;
+        Ok(value as u8)
+    }
+
     /// query motion profile enabled or disabled.
     /// If the motion profile is enabled, angular acceleration (AA) and angular deceleration(AD) will have an effect on the motion. Also, SD/S and T modifiers can be used.
     ///
@@ -388,24 +427,6 @@ impl LSSDriver {
         angular_holding: i32,
     ) -> Result<(), Box<dyn Error>> {
         self.driver.send(LssCommand::with_param(id, "AH", angular_holding)).await?;
-        Ok(())
-    }
-
-    /// Set filter position count
-    ///
-    /// Change the Filter Position Count value for this session.
-    /// Affects motion only when motion profile is disabled (EM0)
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - ID of servo you want to control
-    /// * `filter_position_count` - default if 5
-    pub async fn set_filter_position_count(
-        &mut self,
-        id: u8,
-        filter_position_count: u8,
-    ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "FPC", filter_position_count as i32)).await?;
         Ok(())
     }
 
@@ -626,4 +647,6 @@ mod tests {
     test_query!(test_query_motion_profile_on, "#5QEM\r", "*5QEM1\r", driver.query_motion_profile(5).await.unwrap(), true);
     test_query!(test_query_motion_profile_off, "#5QEM\r", "*5QEM0\r", driver.query_motion_profile(5).await.unwrap(), false);
 
+    test_command!(test_set_filter_position_count, "#5FPC10\r", driver.set_filter_position_count(5, 10).await.unwrap());
+    test_query!(test_query_filter_position_count, "#5QFPC\r", "*5QFPC10\r", driver.query_filter_position_count(5).await.unwrap(), 10);
 }
