@@ -17,6 +17,7 @@ tokio-serial = "4.3"
 bytes = "0.5"
 tokio = { version = "0.2", features = ["macros"], default-features = false }
 tokio-util = { version = "0.3", features = ["codec"], default-features = false }
+async-trait = "0.1"
 
 [dev-dependencies]
 looprate = { git = "https://github.com/dmweis/looprate" }
