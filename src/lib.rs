@@ -92,7 +92,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// 
-    /// /// # Example
+    /// # Example
     ///
     /// ```no_run
     /// use lss_driver::LSSDriver;
@@ -143,6 +143,8 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     /// * `position` - Absolute position in degrees
     ///
+    /// # Example
+    ///
     /// ```no_run
     /// use lss_driver::LSSDriver;
     /// async fn async_main(){
@@ -155,6 +157,34 @@ impl LSSDriver {
         let angle = (position * 10.0).round() as i32;
         self.driver.send(LssCommand::with_param(id, "D", angle)).await?;
         Ok(())
+    }
+
+    /// Query absolute current position in degrees
+    ///
+    /// Supports virtual positions that are more than 360 degrees
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QD")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QD")?;
+        Ok(value as f32 / 10.0)
+    }
+
+    /// Query absolute target position in degrees
+    ///
+    /// Supports virtual positions that are more than 360 degrees
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_target_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QDT")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QDT")?;
+        Ok(value as f32 / 10.0)
     }
 
     /// Disables motion profile allowing servo to be directly controlled
@@ -417,4 +447,9 @@ mod tests {
     test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.read_voltage(5).await.unwrap(), 11.2);
     test_query!(test_query_id, "#254QID\r", "*QID5\r", driver.query_id(BROADCAST_ID).await.unwrap(), 5);
     test_command!(test_set_id, "#1CID2\r", driver.set_id(1, 2).await.unwrap());
+    
+    // Motion
+    test_command!(test_move_to, "#1D200\r", driver.move_to_position(1, 20.0).await.unwrap());
+    test_query!(test_query_current_position, "#5QD\r", "*5QD132\r", driver.query_position(5).await.unwrap(), 13.2);
+    test_query!(test_query_target_position, "#5QDT\r", "*5QDT6783\r", driver.query_target_position(5).await.unwrap(), 678.3);
 }
