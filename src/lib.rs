@@ -464,7 +464,7 @@ impl LSSDriver {
 
     /// Set angular acceleration in degrees per second squared (°/s2)
     /// 
-    /// Accepts values between 1 and 100. Increments  of 10
+    /// Accepts values between 1 and 100. Increments of 10
     /// Only used when motion profile is enabled
     /// 
     /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularAcceleration28AA29)
@@ -472,7 +472,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    /// * `angular_holding` - value for angular holding stiffness (-10 to 10)
+    /// * `angular_acceleration` - value for angular acceleration (1 to 100, Increments 10)
     pub async fn set_angular_acceleration(
         &mut self,
         id: u8,
@@ -498,6 +498,45 @@ impl LSSDriver {
         self.driver.send(LssCommand::simple(id, "QAA")).await?;
         let response = self.driver.receive().await?;
         let (_, value)= response.separate("QAA")?;
+        Ok(value)
+    }
+
+    /// Set angular deceleration in degrees per second squared (°/s2)
+    /// 
+    /// Accepts values between 1 and 100. Increments of 10
+    /// Only used when motion profile is enabled
+    /// 
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularDeceleration28AD29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `angular_deceleration` - value for angular deceleration (1 to 100, Increments 10)
+    pub async fn set_angular_deceleration(
+        &mut self,
+        id: u8,
+        angular_deceleration: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        self.driver.send(LssCommand::with_param(id, "AD", angular_deceleration)).await?;
+        Ok(())
+    }
+
+    /// Query angular deceleration in degrees per second squared (°/s2)
+    /// 
+    /// Accepts values between 1 and 100. Increments  of 10
+    /// Only used when motion profile is enabled
+    /// 
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularDeceleration28AD29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_angular_deceleration(
+        &mut self,
+        id: u8) -> Result<i32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QAD")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QAD")?;
         Ok(value)
     }
 
@@ -697,4 +736,7 @@ mod tests {
 
     test_command!(test_set_angular_acceleration, "#5AA30\r", driver.set_angular_acceleration(5, 30).await.unwrap());
     test_query!(test_query_angular_acceleration, "#5QAA\r", "*5QAA30\r", driver.query_angular_acceleration(5).await.unwrap(), 30);
+
+    test_command!(test_set_angular_deceleration, "#5AD30\r", driver.set_angular_deceleration(5, 30).await.unwrap());
+    test_query!(test_query_angular_deceleration, "#5QAD\r", "*5QAD30\r", driver.query_angular_deceleration(5).await.unwrap(), 30);
 }
