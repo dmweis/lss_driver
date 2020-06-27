@@ -40,9 +40,9 @@ impl LssResponse {
     }
 
     pub fn separate(&self, separator: &str) -> Result<(u8, i32), Box<dyn Error>> {
+        let len = self.message.len();
         let mut split = self
-            .message[1..]
-            .trim()
+            .message[1..len-1]
             .split(separator);
         let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
         let value: i32 = split.next().ok_or("Failed to extract value")?.parse()?;
