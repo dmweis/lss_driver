@@ -462,6 +462,45 @@ impl LSSDriver {
         Ok(value)
     }
 
+    /// Set angular acceleration in degrees per second squared (°/s2)
+    /// 
+    /// Accepts values between 1 and 100. Increments  of 10
+    /// Only used when motion profile is enabled
+    /// 
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularAcceleration28AA29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `angular_holding` - value for angular holding stiffness (-10 to 10)
+    pub async fn set_angular_acceleration(
+        &mut self,
+        id: u8,
+        angular_acceleration: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        self.driver.send(LssCommand::with_param(id, "AA", angular_acceleration)).await?;
+        Ok(())
+    }
+
+    /// Query angular acceleration in degrees per second squared (°/s2)
+    /// 
+    /// Accepts values between 1 and 100. Increments  of 10
+    /// Only used when motion profile is enabled
+    /// 
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularAcceleration28AA29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_angular_acceleration(
+        &mut self,
+        id: u8) -> Result<i32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QAA")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QAA")?;
+        Ok(value)
+    }
+
     /// Disables power to motor allowing it to be back driven
     ///
     /// # Arguments
@@ -655,4 +694,7 @@ mod tests {
 
     test_command!(test_set_angular_holding_stiffness, "#5AH3\r", driver.set_angular_holding_stiffness(5, 3).await.unwrap());
     test_query!(test_query_angular_holding_stiffness, "#5QAH\r", "*5QAH3\r", driver.query_angular_holding_stiffness(5).await.unwrap(), 3);
+
+    test_command!(test_set_angular_acceleration, "#5AA30\r", driver.set_angular_acceleration(5, 30).await.unwrap());
+    test_query!(test_query_angular_acceleration, "#5QAA\r", "*5QAA30\r", driver.query_angular_acceleration(5).await.unwrap(), 30);
 }
