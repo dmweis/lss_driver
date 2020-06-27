@@ -318,18 +318,23 @@ mod tests {
     async fn test_limp_color_move_hold() {
         let mocked_framed_driver = MockedDriver {
             expected_send: vec![
+                "#5QV\r".to_owned(),
                 "#4H\r".to_owned(),
                 "#3D1800\r".to_owned(),
                 "#2LED1\r".to_owned(),
                 "#1L\r".to_owned(),
             ],
-            receive: vec![],
+            receive: vec![
+                "*5QV11200\r".to_owned(),
+            ],
         };
         let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
         driver.limp(1).await.unwrap();
         driver.set_color(2, LedColor::Red).await.unwrap();
         driver.move_to_position(3, 180.0).await.unwrap();
         driver.halt_hold(4).await.unwrap();
+        let voltage = driver.read_voltage(5).await.unwrap();
+        assert_eq!(voltage, 11.2);
     }
 
     macro_rules! test_command {
@@ -348,5 +353,25 @@ mod tests {
         }
     }
 
+    macro_rules! test_query {
+        ($name:ident, $expected:expr, $recv:expr, $command:expr, $val:expr) => {
+            #[tokio::test]
+            async fn $name() {
+                let mocked_framed_driver = MockedDriver {
+                    expected_send: vec![
+                        $expected.to_owned(),
+                    ],
+                    receive: vec![
+                        $recv.to_owned(),
+                    ],
+                };
+                let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
+                let res = $command;
+                assert_eq!(res, $val);
+            }
+        }
+    }
+
     test_command!(test_hold_command, "#4H\r", driver.halt_hold(4).await.unwrap());
+    test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.read_voltage(5).await.unwrap(), 11.2);
 }
