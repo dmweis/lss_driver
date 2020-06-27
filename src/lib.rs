@@ -580,7 +580,7 @@ mod tests {
     test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.read_voltage(5).await.unwrap(), 11.2);
     test_query!(test_query_id, "#254QID\r", "*QID5\r", driver.query_id(BROADCAST_ID).await.unwrap(), 5);
     test_command!(test_set_id, "#1CID2\r", driver.set_id(1, 2).await.unwrap());
-    
+
     // Motion
     test_command!(test_move_to, "#1D200\r", driver.move_to_position(1, 20.0).await.unwrap());
     test_query!(test_query_current_position, "#5QD\r", "*5QD132\r", driver.query_position(5).await.unwrap(), 13.2);
@@ -594,7 +594,10 @@ mod tests {
     test_query!(test_unknown_status, "#5Q\r", "*5Q0\r", driver.query_status(5).await.unwrap(), MotorStatus::Unknown);
     test_query!(test_holding_status, "#5Q\r", "*5Q6\r", driver.query_status(5).await.unwrap(), MotorStatus::Holding);
     test_query!(test_safety_status, "#5Q1\r", "*5Q3\r", driver.query_safety_status(5).await.unwrap(), SafeModeStatus::TemperatureLimit);
-    
+
+    test_command!(test_limp, "#5L\r", driver.limp(5).await.unwrap());
+    test_command!(test_halt_hold, "#5H\r", driver.halt_hold(5).await.unwrap());
+
     // LED
     test_command!(test_set_led, "#5LED3\r", driver.set_color(5, LedColor::Blue).await.unwrap());
     test_query!(test_query_led, "#5QLED\r", "*5QLED5\r", driver.query_color(5).await.unwrap(), LedColor::Cyan);
