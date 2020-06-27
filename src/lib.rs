@@ -339,6 +339,24 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// query motion profile enabled or disabled.
+    /// If the motion profile is enabled, angular acceleration (AA) and angular deceleration(AD) will have an effect on the motion. Also, SD/S and T modifiers can be used.
+    ///
+    /// With motion profile enabled servos will follow a motion curve
+    /// With motion profile disabled servos move towards target location at full speed
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_motion_profile(
+        &mut self,
+        id: u8) -> Result<bool, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QEM")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QEM")?;
+        Ok(value != 0)
+    }
+
     /// Set filter position count
     ///
     /// Change the Filter Position Count value for this session.
@@ -376,24 +394,6 @@ impl LSSDriver {
         let response = self.driver.receive().await?;
         let (_, value)= response.separate("QFPC")?;
         Ok(value as u8)
-    }
-
-    /// query motion profile enabled or disabled.
-    /// If the motion profile is enabled, angular acceleration (AA) and angular deceleration(AD) will have an effect on the motion. Also, SD/S and T modifiers can be used.
-    ///
-    /// With motion profile enabled servos will follow a motion curve
-    /// With motion profile disabled servos move towards target location at full speed
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - ID of servo you want to query
-    pub async fn query_motion_profile(
-        &mut self,
-        id: u8) -> Result<bool, Box<dyn Error>> {
-        self.driver.send(LssCommand::simple(id, "QEM")).await?;
-        let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QEM")?;
-        Ok(value != 0)
     }
 
     /// Set angular stiffness
