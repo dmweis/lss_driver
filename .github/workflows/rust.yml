@@ -16,8 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install libudev-dev
-      run: sudo apt update && sudo apt install libudev-dev -y
     - name: Build
       run: cargo build --verbose
     - name: Run tests
