@@ -22,8 +22,12 @@ impl LssCommand {
         }
     }
 
-    fn as_bytes(&self) -> &[u8] {
+    pub fn as_bytes(&self) -> &[u8] {
         self.message.as_bytes()
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.message
     }
 }
 
@@ -33,7 +37,7 @@ pub struct LssResponse {
 }
 
 impl LssResponse {
-    fn new(message: String) -> LssResponse {
+    pub fn new(message: String) -> LssResponse {
         LssResponse {
             message
         }

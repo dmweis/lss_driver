@@ -286,9 +286,67 @@ impl LSSDriver {
 
 #[cfg(test)]
 mod tests {
+    use super::*;
     use tokio;
+    use async_trait::async_trait;
+    use super::serial_driver::LssResponse;
+
+
+    struct MockedDriver {
+        expected_send: Vec<String>,
+        receive: Vec<String>,
+    }
+
+    #[async_trait]
+    impl FramedDriver for MockedDriver {
+        async fn send(&mut self, command: LssCommand) -> Result<(), Box<dyn Error>> {
+            let expected = self.expected_send.pop().unwrap();
+            assert_eq!(expected, command.as_str().to_owned());
+            Ok(())
+        }
+
+        async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>> {
+            Ok(LssResponse::new(self.receive.pop().unwrap()))
+        }
+    }
 
     #[tokio::test]
     async fn async_test_builds() {}
 
+
+    #[tokio::test]
+    async fn test_limp_color_move_hold() {
+        let mocked_framed_driver = MockedDriver {
+            expected_send: vec![
+                "#4H\r".to_owned(),
+                "#3D1800\r".to_owned(),
+                "#2LED1\r".to_owned(),
+                "#1L\r".to_owned(),
+            ],
+            receive: vec![],
+        };
+        let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
+        driver.limp(1).await.unwrap();
+        driver.set_color(2, LedColor::Red).await.unwrap();
+        driver.move_to_position(3, 180.0).await.unwrap();
+        driver.halt_hold(4).await.unwrap();
+    }
+
+    macro_rules! test_command {
+        ($name:ident, $expected:expr, $command:expr) => {
+            #[tokio::test]
+            async fn $name() {
+                let mocked_framed_driver = MockedDriver {
+                    expected_send: vec![
+                        $expected.to_owned(),
+                    ],
+                    receive: vec![],
+                };
+                let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
+                $command;
+            }
+        }
+    }
+
+    test_command!(test_hold_command, "#4H\r", driver.halt_hold(4).await.unwrap());
 }
