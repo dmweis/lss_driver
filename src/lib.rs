@@ -25,6 +25,7 @@ pub enum LedColor {
     White = 7,
 }
 
+pub const BROADCAST_ID: u8 = 254;
 
 /// Driver for the LSS servo
 pub struct LSSDriver {
@@ -80,6 +81,46 @@ impl LSSDriver {
         LSSDriver {
             driver,
         }
+    }
+
+    /// Query value of ID
+    /// Especially useful with BROADCAST_ID
+    /// 
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HIdentificationNumber28ID29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// 
+    /// /// # Example
+    ///
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    /// async fn async_main(){
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     let id = driver.query_id(lss_driver::BROADCAST_ID).await.unwrap();
+    /// }
+    /// ```
+    pub async fn query_id(&mut self, id: u8) -> Result<u8, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QID")).await?;
+        let response = self.driver.receive().await?;
+        let value = response.get_val("QID")?;
+        Ok(value as u8)
+    }
+
+    /// Set value of ID
+    /// Saved to EEPROM
+    /// Only takes effect after restart
+    /// 
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HIdentificationNumber28ID29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `new_id` - ID You want that servo to have
+    pub async fn set_id(&mut self, id: u8, new_id: u8) -> Result<(), Box<dyn Error>> {
+        self.driver.send(LssCommand::with_param(id, "CID", new_id as i32)).await?;
+        Ok(())
     }
 
     /// set color for driver with id
@@ -374,4 +415,6 @@ mod tests {
 
     test_command!(test_hold_command, "#4H\r", driver.halt_hold(4).await.unwrap());
     test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.read_voltage(5).await.unwrap(), 11.2);
+    test_query!(test_query_id, "#254QID\r", "*QID5\r", driver.query_id(BROADCAST_ID).await.unwrap(), 5);
+    test_command!(test_set_id, "#1CID2\r", driver.set_id(1, 2).await.unwrap());
 }

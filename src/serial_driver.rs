@@ -52,6 +52,19 @@ impl LssResponse {
         let value: i32 = split.next().ok_or("Failed to extract value")?.parse()?;
         Ok((id, value))
     }
+
+    /// Similar to separate but doesn't parse the ID
+    /// This is useful for queries that don't return ID
+    /// 
+    /// Such as QID
+    pub fn get_val(&self, separator: &str) -> Result<i32, Box<dyn Error>> {
+        let len = self.message.len();
+        let split = self
+            .message[1..len-1]
+            .split(separator);
+        let value: i32 = split.last().ok_or("Failed to extract value")?.parse()?;
+        Ok(value)
+    }
 }
 
 pub struct LssCodec;
@@ -219,5 +232,12 @@ mod tests {
             Ok(_) => assert!(false),
             Err(_) => assert!(true),
         }
+    }
+
+    #[test]
+    fn response_val_only() {
+        let res = LssResponse::new("*QID5\r".to_owned());
+        let val = res.get_val("QID").unwrap();
+        assert_eq!(val, 5);
     }
 }
