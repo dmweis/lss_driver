@@ -4,7 +4,7 @@ use tokio_util::codec::{Decoder, Encoder};
 use async_trait::async_trait;
 use futures::{ SinkExt, StreamExt };
 
-
+#[derive(PartialEq, Clone, Debug)]
 pub struct LssCommand {
     message: String,
 }
@@ -27,6 +27,7 @@ impl LssCommand {
     }
 }
 
+#[derive(PartialEq, Clone, Debug)]
 pub struct LssResponse {
     message: String
 }
@@ -123,5 +124,66 @@ impl FramedDriver for FramedSerialDriver {
     async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>> {
         let response = self.framed_port.next().await.ok_or("Failed receive message")??;
         Ok(response)
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use bytes::BytesMut;
+
+    #[test]
+    fn framing_returns_none() {
+        let mut payload = BytesMut::from("*5QV11200".as_bytes());
+        let mut codec = LssCodec {};
+        let res = codec.decode(&mut payload).unwrap();
+        assert_eq!(res, None);
+    }
+
+    #[test]
+    fn framing_returns_twice() {
+        let mut payload = BytesMut::from("*1QV1\r*2QV2\r".as_bytes());
+        let mut codec = LssCodec {};
+        let res = codec.decode(&mut payload).unwrap().unwrap();
+        let (id, val) = res.separate("QV").unwrap();
+        assert_eq!(id, 1);
+        assert_eq!(val, 1);
+        let res = codec.decode(&mut payload).unwrap().unwrap();
+        let (id, val) = res.separate("QV").unwrap();
+        assert_eq!(id, 2);
+        assert_eq!(val, 2);
+        let res = codec.decode(&mut payload).unwrap();
+        assert_eq!(res, None);
+    }
+
+    #[test]
+    fn query_voltage_gets_extracted_from_frame() {
+        let mut payload = BytesMut::from("*5QV11200\r".as_bytes());
+        let mut codec = LssCodec {};
+        let res = codec.decode(&mut payload).unwrap().unwrap();
+        let (id, val) = res.separate("QV").unwrap();
+        assert_eq!(id, 5);
+        assert_eq!(val, 11200);
+    }
+
+    #[test]
+    fn simple_command_serializes() {
+        let command = LssCommand::simple(1, "QV");
+        assert_eq!(command.as_bytes(), "#1QV\r".as_bytes())
+    }
+
+    #[test]
+    fn param_command_serializes() {
+        let command = LssCommand::with_param(1, "D", 10);
+        assert_eq!(command.as_bytes(), "#1D10\r".as_bytes())
+    }
+
+    #[test]
+    fn response_splits() {
+        let res = LssResponse::new("*5QF42\r".to_owned());
+        let (id, val) = res.separate("QF").unwrap();
+        assert_eq!(id, 5);
+        assert_eq!(val, 42);
     }
 }

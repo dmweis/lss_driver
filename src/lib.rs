@@ -73,7 +73,14 @@ impl LSSDriver {
         })
     }
 
-    
+    /// Creates new LSS driver with a custom implementation of the transport
+    ///
+    /// This is used for tests and can be used if you want to reimplement the driver over network
+    pub fn with_driver(driver: Box<dyn FramedDriver>) -> LSSDriver {
+        LSSDriver {
+            driver,
+        }
+    }
 
     /// set color for driver with id
     ///
@@ -274,4 +281,14 @@ impl LSSDriver {
         let (_, value) = response.separate("QC")?;
         Ok(value as f32 / 1000.0)
     }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use tokio;
+
+    #[tokio::test]
+    async fn async_test_builds() {}
+
 }
