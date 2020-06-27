@@ -1,6 +1,7 @@
 use lss_driver;
-use looprate::{ Rate, RateTimer };
 use std::time::Instant;
+use async_std::task::sleep;
+use std::time::Duration;
 use clap::Clap;
 
 #[derive(Clap)]
@@ -16,8 +17,6 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
     let start = Instant::now();
-    let mut rate = Rate::from_frequency(200.0);
-    let mut loop_rate_counter = RateTimer::new();
     let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
     driver.set_color(5, lss_driver::LedColor::Green).await?;
     driver.set_motion_profile(5, false).await?;
@@ -25,8 +24,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     driver.set_angular_stiffness(5, -2).await?;
     driver.set_filter_position_count(5, 4).await?;
     loop {
-        rate.wait();
         driver.move_to_position(5, (start.elapsed().as_secs_f32() * 3.0).sin() * 90.0).await?;
-        loop_rate_counter.tick();
+        sleep(Duration::from_millis(20)).await;
     }
 }

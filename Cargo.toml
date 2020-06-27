@@ -20,6 +20,5 @@ tokio-util = { version = "0.3", features = ["codec"], default-features = false }
 async-trait = "0.1"
 
 [dev-dependencies]
-looprate = { git = "https://github.com/dmweis/looprate" }
 clap = "3.0.0-beta.1"
 async-std = "1.6"
