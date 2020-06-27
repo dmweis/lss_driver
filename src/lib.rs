@@ -187,6 +187,29 @@ impl LSSDriver {
         Ok(value as f32 / 10.0)
     }
 
+    /// Set continuous rotation speed in °/s
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `speed` - Speed in °/s
+    pub async fn set_rotation_speed(&mut self, id: u8, speed: f32) -> Result<(), Box<dyn Error>> {
+        self.driver.send(LssCommand::with_param(id, "WD", speed as i32)).await?;
+        Ok(())
+    }
+
+    /// Query absolute rotation speed in °/s
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_rotation_speed(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QWD")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QWD")?;
+        Ok(value as f32)
+    }
+
     /// Disables motion profile allowing servo to be directly controlled
     ///
     /// With motion profile enabled servos will follow a motion curve
@@ -452,4 +475,8 @@ mod tests {
     test_command!(test_move_to, "#1D200\r", driver.move_to_position(1, 20.0).await.unwrap());
     test_query!(test_query_current_position, "#5QD\r", "*5QD132\r", driver.query_position(5).await.unwrap(), 13.2);
     test_query!(test_query_target_position, "#5QDT\r", "*5QDT6783\r", driver.query_target_position(5).await.unwrap(), 678.3);
+    
+    // Wheel mode
+    test_command!(test_set_rotation_speed_degrees, "#5WD90\r", driver.set_rotation_speed(5, 90.0).await.unwrap());
+    test_query!(test_query_rotation_speed_degrees, "#5QWD\r", "*5QWD90\r", driver.query_rotation_speed(5).await.unwrap(), 90.0);
 }
