@@ -462,24 +462,6 @@ impl LSSDriver {
         Ok(value)
     }
 
-    /// Read filter position count
-    ///
-    /// Affects motion only when motion profile is disabled (EM0)
-    /// Default is 5
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - ID of servo you want to read from
-    pub async fn read_filter_position_count(
-        &mut self,
-        id: u8,
-    ) -> Result<u8, Box<dyn Error>> {
-        self.driver.send(LssCommand::simple(id, "QFPC")).await?;
-        let response = self.driver.receive().await?;
-        let (_, value) = response.separate("QFPC")?;
-        Ok(value as u8)
-    }
-
     /// Disables power to motor allowing it to be back driven
     ///
     /// # Arguments
@@ -498,20 +480,6 @@ impl LSSDriver {
     pub async fn halt_hold(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "H")).await?;
         Ok(())
-    }
-
-    /// Read current position of motor in degrees
-    ///
-    /// # Arguments
-    ///
-    /// * `id` - ID of servo you want to read from
-    pub async fn read_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
-        // response message looks like *5QDT6783<cr>
-        // Response is in 10s of degrees
-        self.driver.send(LssCommand::simple(id, "QDT")).await?;
-        let response = self.driver.receive().await?;
-        let (_, value) = response.separate("QDT")?;
-        Ok(value as f32 / 10.0)
     }
 
     /// Read voltage of motor in volts
