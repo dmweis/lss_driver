@@ -403,7 +403,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    /// * `angular_stiffness` - value for angular stiffness (-10 to 10)
+    /// * `angular_stiffness` - value for angular stiffness (-10 to 10) (recommended -4 to 4)
     pub async fn set_angular_stiffness(
         &mut self,
         id: u8,
@@ -411,6 +411,22 @@ impl LSSDriver {
     ) -> Result<(), Box<dyn Error>> {
         self.driver.send(LssCommand::with_param(id, "AS", angular_stiffness)).await?;
         Ok(())
+    }
+
+    /// Query angular stiffness
+    /// 
+    /// Read more about [Angular stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularStiffness28AS29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_angular_stiffness(
+        &mut self,
+        id: u8) -> Result<i32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QAS")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QAS")?;
+        Ok(value)
     }
 
     /// Set angular holding stiffness
@@ -421,13 +437,29 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `angular_holding` - value for angular holding stiffness (-10 to 10)
-    pub async fn set_angular_holding(
+    pub async fn set_angular_holding_stiffness(
         &mut self,
         id: u8,
         angular_holding: i32,
     ) -> Result<(), Box<dyn Error>> {
         self.driver.send(LssCommand::with_param(id, "AH", angular_holding)).await?;
         Ok(())
+    }
+
+    /// Query angular holding stiffness
+    /// 
+    /// Read more about [Angular holding stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularHoldingStiffness28AH29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    pub async fn query_angular_holding_stiffness(
+        &mut self,
+        id: u8) -> Result<i32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QAH")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QAH")?;
+        Ok(value)
     }
 
     /// Read filter position count
@@ -649,4 +681,10 @@ mod tests {
 
     test_command!(test_set_filter_position_count, "#5FPC10\r", driver.set_filter_position_count(5, 10).await.unwrap());
     test_query!(test_query_filter_position_count, "#5QFPC\r", "*5QFPC10\r", driver.query_filter_position_count(5).await.unwrap(), 10);
+
+    test_command!(test_set_angular_stiffness, "#5AS-2\r", driver.set_angular_stiffness(5, -2).await.unwrap());
+    test_query!(test_query_angular_stiffness, "#5QAS\r", "*5QAS-2\r", driver.query_angular_stiffness(5).await.unwrap(), -2);
+
+    test_command!(test_set_angular_holding_stiffness, "#5AH3\r", driver.set_angular_holding_stiffness(5, 3).await.unwrap());
+    test_query!(test_query_angular_holding_stiffness, "#5QAH\r", "*5QAH3\r", driver.query_angular_holding_stiffness(5).await.unwrap(), 3);
 }

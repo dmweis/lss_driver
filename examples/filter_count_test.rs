@@ -18,7 +18,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
     driver.set_color(5, lss_driver::LedColor::Green).await?;
     driver.set_motion_profile(5, false).await?;
-    driver.set_angular_holding(5, -4).await?;
+    driver.set_angular_holding_stiffness(5, -4).await?;
     driver.set_angular_stiffness(5, -4).await?;
     driver.set_filter_position_count(5, 4).await?;
     for i in 0..10 {
