@@ -1,7 +1,7 @@
 /*!
- * # Iron LSS
+ * # LSS Driver
  *
- * Iron LSS is a driver library for Lynxmotion Smart Servos
+ * lss_driver is a driver library for Lynxmotion Smart Servos
  *
  * You can read more about the LSS Servos here their
  * [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/)

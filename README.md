@@ -1,5 +1,5 @@
-# Iron LSS
+# LSS Driver
 
-[![Rust](https://github.com/dmweis/iron_lss/workflows/Rust/badge.svg)](https://github.com/dmweis/iron_lss/actions)
+[![Rust](https://github.com/dmweis/lss_driver/workflows/Rust/badge.svg)](https://github.com/dmweis/lss_driver/actions)
 
 Serial driver the Lynxmotion Smart Servo (LSS)
