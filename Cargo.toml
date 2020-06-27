@@ -23,4 +23,3 @@ async-trait = "0.1"
 looprate = { git = "https://github.com/dmweis/looprate" }
 clap = "3.0.0-beta.1"
 async-std = "1.6"
-dynamixel_driver = { git = "https://github.com/dmweis/dynamixel_driver" }
