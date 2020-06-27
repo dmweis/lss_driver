@@ -320,11 +320,11 @@ impl LSSDriver {
         Ok(SafeModeStatus::from_i32(value)?)
     }
 
-    /// Disables motion profile allowing servo to be directly controlled
+    /// Set motion profile enabled or disabled.
+    /// If the motion profile is enabled, angular acceleration (AA) and angular deceleration(AD) will have an effect on the motion. Also, SD/S and T modifiers can be used.
     ///
     /// With motion profile enabled servos will follow a motion curve
-    /// With motion profile disabled servos
-    /// can be positionally controlled at high speed
+    /// With motion profile disabled servos move towards target location at full speed
     ///
     /// # Arguments
     ///
@@ -337,6 +337,24 @@ impl LSSDriver {
     ) -> Result<(), Box<dyn Error>> {
         self.driver.send(LssCommand::with_param(id, "EM", motion_profile as i32)).await?;
         Ok(())
+    }
+
+    /// query motion profile enabled or disabled.
+    /// If the motion profile is enabled, angular acceleration (AA) and angular deceleration(AD) will have an effect on the motion. Also, SD/S and T modifiers can be used.
+    ///
+    /// With motion profile enabled servos will follow a motion curve
+    /// With motion profile disabled servos move towards target location at full speed
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_motion_profile(
+        &mut self,
+        id: u8) -> Result<bool, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QEM")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QEM")?;
+        Ok(value != 0)
     }
 
     /// Set angular stiffness
@@ -601,5 +619,11 @@ mod tests {
     // LED
     test_command!(test_set_led, "#5LED3\r", driver.set_color(5, LedColor::Blue).await.unwrap());
     test_query!(test_query_led, "#5QLED\r", "*5QLED5\r", driver.query_color(5).await.unwrap(), LedColor::Cyan);
+
+    // motion profile
+    test_command!(test_motion_profile_on, "#5EM1\r", driver.set_motion_profile(5, true).await.unwrap());
+    test_command!(test_motion_profile_off, "#5EM0\r", driver.set_motion_profile(5, false).await.unwrap());
+    test_query!(test_query_motion_profile_on, "#5QEM\r", "*5QEM1\r", driver.query_motion_profile(5).await.unwrap(), true);
+    test_query!(test_query_motion_profile_off, "#5QEM\r", "*5QEM0\r", driver.query_motion_profile(5).await.unwrap(), false);
 
 }
