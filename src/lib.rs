@@ -13,7 +13,7 @@ use serial_driver::{ FramedSerialDriver, FramedDriver, LssCommand };
 use std::{ str, error::Error };
 
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LedColor {
     Off = 0,
     Red = 1,
@@ -23,6 +23,76 @@ pub enum LedColor {
     Cyan = 5,
     Magenta = 6,
     White = 7,
+}
+
+impl LedColor {
+    fn from_i32(number: i32) -> Result<LedColor, Box<dyn Error>> {
+        match number {
+            0 => Ok(LedColor::Off),
+            1 => Ok(LedColor::Red),
+            2 => Ok(LedColor::Green),
+            3 => Ok(LedColor::Blue),
+            4 => Ok(LedColor::Yellow),
+            5 => Ok(LedColor::Cyan),
+            6 => Ok(LedColor::Magenta),
+            7 => Ok(LedColor::White),
+            _ => Err("Could not find color")?,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum MotorStatus {
+    Unknown = 0,
+    Limp = 1,
+    FreeMoving = 2,
+    Accelerating = 3,
+    Traveling = 4,
+    Decelerating = 5,
+    Holding = 6,
+    OutsideLimits = 7,
+    Stuck = 8,
+    Blocked = 9,
+    SafeMode = 10,
+}
+
+impl MotorStatus {
+    fn from_i32(number: i32) -> Result<MotorStatus, Box<dyn Error>> {
+        match number {
+            0 => Ok(MotorStatus::Unknown),
+            1 => Ok(MotorStatus::Limp),
+            2 => Ok(MotorStatus::FreeMoving),
+            3 => Ok(MotorStatus::Accelerating),
+            4 => Ok(MotorStatus::Traveling),
+            5 => Ok(MotorStatus::Decelerating),
+            6 => Ok(MotorStatus::Holding),
+            7 => Ok(MotorStatus::OutsideLimits),
+            8 => Ok(MotorStatus::Stuck),
+            9 => Ok(MotorStatus::Blocked),
+            10 => Ok(MotorStatus::SafeMode),
+            _ => Err("Could not find status")?,
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum SafeModeStatus {
+    NoLimits = 0,
+    CurrentLimit = 1,
+    InputVoltageOutOfRange = 2,
+    TemperatureLimit = 3,
+}
+
+impl SafeModeStatus {
+    fn from_i32(number: i32) -> Result<SafeModeStatus, Box<dyn Error>> {
+        match number {
+            0 => Ok(SafeModeStatus::NoLimits),
+            1 => Ok(SafeModeStatus::CurrentLimit),
+            2 => Ok(SafeModeStatus::InputVoltageOutOfRange),
+            3 => Ok(SafeModeStatus::TemperatureLimit),
+            _ => Err("Could not find safe status")?,
+        }
+    }
 }
 
 pub const BROADCAST_ID: u8 = 254;
@@ -134,6 +204,18 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Query color of servo LED
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_color(&mut self, id: u8) -> Result<LedColor, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QLED")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("QLED")?;
+        Ok(LedColor::from_i32(value)?)
+    }
+
     /// Move to absolute position in degrees
     ///
     /// Supports virtual positions that are more than 360 degrees
@@ -208,6 +290,34 @@ impl LSSDriver {
         let response = self.driver.receive().await?;
         let (_, value)= response.separate("QWD")?;
         Ok(value as f32)
+    }
+
+    /// Query status of a motor
+    ///
+    /// View more on [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HQueryStatus28Q29)
+    /// 
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_status(&mut self, id: u8) -> Result<MotorStatus, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "Q")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("Q")?;
+        Ok(MotorStatus::from_i32(value)?)
+    }
+
+    /// Query safety status of a motor
+    ///
+    /// View more on [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HQueryStatus28Q29)
+    /// 
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_safety_status(&mut self, id: u8) -> Result<SafeModeStatus, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "Q1")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value)= response.separate("Q")?;
+        Ok(SafeModeStatus::from_i32(value)?)
     }
 
     /// Disables motion profile allowing servo to be directly controlled
@@ -479,4 +589,14 @@ mod tests {
     // Wheel mode
     test_command!(test_set_rotation_speed_degrees, "#5WD90\r", driver.set_rotation_speed(5, 90.0).await.unwrap());
     test_query!(test_query_rotation_speed_degrees, "#5QWD\r", "*5QWD90\r", driver.query_rotation_speed(5).await.unwrap(), 90.0);
+    
+    // Status
+    test_query!(test_unknown_status, "#5Q\r", "*5Q0\r", driver.query_status(5).await.unwrap(), MotorStatus::Unknown);
+    test_query!(test_holding_status, "#5Q\r", "*5Q6\r", driver.query_status(5).await.unwrap(), MotorStatus::Holding);
+    test_query!(test_safety_status, "#5Q1\r", "*5Q3\r", driver.query_safety_status(5).await.unwrap(), SafeModeStatus::TemperatureLimit);
+    
+    // LED
+    test_command!(test_set_led, "#5LED3\r", driver.set_color(5, LedColor::Blue).await.unwrap());
+    test_query!(test_query_led, "#5QLED\r", "*5QLED5\r", driver.query_color(5).await.unwrap(), LedColor::Cyan);
+
 }
