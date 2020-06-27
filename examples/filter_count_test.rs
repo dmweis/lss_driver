@@ -1,4 +1,4 @@
-use iron_lss;
+use lss_driver;
 use async_std::task::sleep;
 use std::time::Duration;
 use clap::Clap;
@@ -15,8 +15,8 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
-    let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
-    driver.set_color(5, iron_lss::LedColor::Green).await?;
+    let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
+    driver.set_color(5, lss_driver::LedColor::Green).await?;
     driver.set_motion_profile(5, false).await?;
     driver.set_angular_holding(5, -4).await?;
     driver.set_angular_stiffness(5, -4).await?;

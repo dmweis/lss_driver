@@ -1,4 +1,4 @@
-use iron_lss;
+use lss_driver;
 use dynamixel_driver::DynamixelDriver;
 use looprate::{ Rate, RateTimer };
 use std::time::Instant;
@@ -25,10 +25,10 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     let mut rate = Rate::from_frequency(200.0);
     let mut loop_rate_counter = RateTimer::new();
-    let mut driver_lss = iron_lss::LSSDriver::new(&args.lss).unwrap();
+    let mut driver_lss = lss_driver::LSSDriver::new(&args.lss).unwrap();
     let mut driver_dyn = DynamixelDriver::new(&args.dynamixel).unwrap();
 
-    driver_lss.set_color(5, iron_lss::LedColor::Green).await?;
+    driver_lss.set_color(5, lss_driver::LedColor::Green).await?;
     driver_lss.set_motion_profile(5, false).await?;
     loop {
         rate.wait();

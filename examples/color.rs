@@ -1,4 +1,4 @@
-use iron_lss;
+use lss_driver;
 use async_std::task::sleep;
 use std::time::Duration;
 use clap::Clap;
@@ -16,16 +16,16 @@ struct Args {
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
     let colors = vec![
-        iron_lss::LedColor::Off,
-        iron_lss::LedColor::Red,
-        iron_lss::LedColor::Green,
-        iron_lss::LedColor::Blue,
-        iron_lss::LedColor::Yellow,
-        iron_lss::LedColor::Cyan,
-        iron_lss::LedColor::Magenta,
-        iron_lss::LedColor::White,
+        lss_driver::LedColor::Off,
+        lss_driver::LedColor::Red,
+        lss_driver::LedColor::Green,
+        lss_driver::LedColor::Blue,
+        lss_driver::LedColor::Yellow,
+        lss_driver::LedColor::Cyan,
+        lss_driver::LedColor::Magenta,
+        lss_driver::LedColor::White,
     ];
-    let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
+    let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
     loop {
         for color in &colors {
             driver.set_color(5, *color).await?;

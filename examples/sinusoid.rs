@@ -1,4 +1,4 @@
-use iron_lss;
+use lss_driver;
 use looprate::{ Rate, RateTimer };
 use std::time::Instant;
 use clap::Clap;
@@ -18,8 +18,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let start = Instant::now();
     let mut rate = Rate::from_frequency(200.0);
     let mut loop_rate_counter = RateTimer::new();
-    let mut driver = iron_lss::LSSDriver::new(&args.port).unwrap();
-    driver.set_color(5, iron_lss::LedColor::Green).await?;
+    let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
+    driver.set_color(5, lss_driver::LedColor::Green).await?;
     driver.set_motion_profile(5, false).await?;
     driver.set_angular_holding(5, -2).await?;
     driver.set_angular_stiffness(5, -2).await?;

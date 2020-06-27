@@ -43,7 +43,7 @@ impl LSSDriver {
     /// # Example
     ///
     /// ```no_run
-    /// use iron_lss::LSSDriver;
+    /// use lss_driver::LSSDriver;
     /// let mut driver = LSSDriver::new("COM1").unwrap();
     /// ```
     pub fn new(port: &str) -> Result<LSSDriver, Box<dyn Error>> {
@@ -63,7 +63,7 @@ impl LSSDriver {
     /// # Example
     ///
     /// ```no_run
-    /// use iron_lss::LSSDriver;
+    /// use lss_driver::LSSDriver;
     /// let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
     /// ```
     pub fn with_baud_rate(port: &str, baud_rate: u32) -> Result<LSSDriver, Box<dyn Error>> {
@@ -103,7 +103,7 @@ impl LSSDriver {
     /// * `position` - Absolute position in degrees
     ///
     /// ```no_run
-    /// use iron_lss::LSSDriver;
+    /// use lss_driver::LSSDriver;
     /// async fn async_main(){
     ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
     ///     driver.move_to_position(5, 180.0).await;

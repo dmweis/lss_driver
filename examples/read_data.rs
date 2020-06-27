@@ -1,4 +1,4 @@
-use iron_lss;
+use lss_driver;
 use clap::Clap;
 
 #[derive(Clap)]
@@ -13,7 +13,7 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Args = Args::parse();
-    let mut driver = iron_lss::LSSDriver::new(&args.port)?;
+    let mut driver = lss_driver::LSSDriver::new(&args.port)?;
     println!("Voltage is {} V", driver.read_voltage(5).await?);
     println!("Temperature is {} °C", driver.read_temperature(5).await?);
     println!("Current is {} A", driver.read_current(5).await?);
