@@ -215,6 +215,14 @@ mod tests {
     }
 
     #[test]
+    fn response_splits_string() {
+        let res = LssResponse::new("*5QFHEH\r".to_owned());
+        let (id, val) = res.separate_string("QF").unwrap();
+        assert_eq!(id, 5);
+        assert_eq!(val, "HEH");
+    }
+
+    #[test]
     fn response_fail_missing_val() {
         let res = LssResponse::new("*5QF\r".to_owned());
         let err = res.separate("QF");
