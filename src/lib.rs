@@ -53,9 +53,10 @@ mod serial_driver;
 use serial_driver::{ FramedSerialDriver, FramedDriver, LssCommand };
 use std::{ str, error::Error };
 
-
+/// Colors for the LED on the servo
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LedColor {
+    // No color
     Off = 0,
     Red = 1,
     Green = 2,
@@ -82,6 +83,8 @@ impl LedColor {
     }
 }
 
+/// Status of the motor as responded to status query
+/// If status is safe mode you can use `query_safety_status` to see more details
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum MotorStatus {
     Unknown = 0,
@@ -94,6 +97,7 @@ pub enum MotorStatus {
     OutsideLimits = 7,
     Stuck = 8,
     Blocked = 9,
+    // You can use `query_safety_status` to see more details
     SafeMode = 10,
 }
 
@@ -116,11 +120,18 @@ impl MotorStatus {
     }
 }
 
+/// Reason why status mode is engaged
+/// if `query_status` doesn't return `SafeMode` this should be `NoLimits`
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SafeModeStatus {
+    // Motor is not in safety mode
     NoLimits = 0,
+    // This probably means that motor was overloaded
     CurrentLimit = 1,
+    // Voltage is either too high or too low
+    // Query voltage to get more info
     InputVoltageOutOfRange = 2,
+    // You can query temperature to see if it's high
     TemperatureLimit = 3,
 }
 
@@ -136,11 +147,17 @@ impl SafeModeStatus {
     }
 }
 
+/// Version of the motor
 #[derive(Clone, Debug, PartialEq)]
 pub enum Model {
+    // Standard model
     ST1,
+    // High speed model
     HS1,
+    // High torque model
     HT1,
+    // Other model 
+    // Shouldn't happen unless new motors were added later
     Other(String),
 }
 
@@ -155,6 +172,8 @@ impl Model {
     }
 }
 
+/// Which status should trigger LED blinking
+/// Can be combined in a list
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LedBlinking {
     NoBlinking = 0,
@@ -167,6 +186,7 @@ pub enum LedBlinking {
     AlwaysBlink = 63,
 }
 
+/// ID used to talk to all motors on a bus at once
 pub const BROADCAST_ID: u8 = 254;
 
 /// Driver for the LSS servo
@@ -718,9 +738,13 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    /// * `blinking_mode` - Blinking mode desired. Can be combination of modes
+    /// * `blinking_mode` - Blinking mode desired. Can be combination to make motor blink during multiple modes
     pub async fn set_led_blinking(&mut self, id: u8, blinking_mode: Vec<LedBlinking>) -> Result<(), Box<dyn Error>> {
-        let sum = blinking_mode.iter().map(|item| *item as i32).sum();
+        let sum = blinking_mode
+            .iter()
+            .map(|item| *item as i32)
+            .sum::<i32>()
+            .min(LedBlinking::AlwaysBlink as i32);
         self.driver.send(LssCommand::with_param(id, "CLB", sum)).await?;
         Ok(())
     }
