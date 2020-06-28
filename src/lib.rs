@@ -1,10 +1,10 @@
 //! # Lynxmotion Smart Servo Driver
 //!
-//! [![Crates.io](https://img.shields.io/crates/v/lss_driver.svg)](https://crates.io/crates/lss_driver)  
-//! [![Docs](https://docs.rs/lss_driver/badge.svg)](https://docs.rs/lss_driver)  
-//! [![Rust](https://github.com/dmweis/lss_driver/workflows/Rust/badge.svg)](https://github.com/dmweis/lss_driver/actions)  
+//! [![Crates.io](https://img.shields.io/crates/v/lss_driver.svg)](https://crates.io/crates/lss_driver)
+//! [![Docs](https://docs.rs/lss_driver/badge.svg)](https://docs.rs/lss_driver)
+//! [![Rust](https://github.com/dmweis/lss_driver/workflows/Rust/badge.svg)](https://github.com/dmweis/lss_driver/actions)
 //! [![codecov](https://codecov.io/gh/dmweis/lss_driver/branch/master/graph/badge.svg)](https://codecov.io/gh/dmweis/lss_driver)
-//! [![Crates.io](https://img.shields.io/crates/l/lss_driver)](https://github.com/dmweis/lss_driver)
+//! [![License](https://img.shields.io/crates/l/lss_driver)](https://github.com/dmweis/lss_driver)
 //!
 //! This crate provides an asynchronous serial driver the the Lynxmotion smart servos.  
 //!
