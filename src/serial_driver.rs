@@ -226,30 +226,21 @@ mod tests {
     fn response_fail_missing_val() {
         let res = LssResponse::new("*5QF\r".to_owned());
         let err = res.separate("QF");
-        match err {
-            Ok(_) => assert!(false),
-            Err(_) => assert!(true),
-        }
+        assert!(err.is_err());
     }
 
     #[test]
     fn response_fail_missing_id() {
         let res = LssResponse::new("*QF1\r".to_owned());
         let err = res.separate("QF");
-        match err {
-            Ok(_) => assert!(false),
-            Err(_) => assert!(true),
-        }
+        assert!(err.is_err());
     }
 
     #[test]
     fn response_fail_wrong_key_split() {
         let res = LssResponse::new("*1QF2\r".to_owned());
         let err = res.separate("ZA");
-        match err {
-            Ok(_) => assert!(false),
-            Err(_) => assert!(true),
-        }
+        assert!(err.is_err());
     }
 
     #[test]
