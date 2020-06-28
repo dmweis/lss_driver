@@ -1,6 +1,7 @@
 //! # Lynxmotion Smart Servo Driver
 //! 
 //! [![Rust](https://github.com/dmweis/lss_driver/workflows/Rust/badge.svg)](https://github.com/dmweis/lss_driver/actions)  
+//! [![Docs](https://docs.rs/lss_driver/badge.svg)](https://docs.rs/lss_driver)  
 //! 
 //! This crate provides an asynchronous serial driver the the Lynxmotion smart servos.  
 //! 

@@ -5,6 +5,7 @@ authors = ["David Michael Weis <dweis7@gmail.com>"]
 edition = "2018"
 
 description = "Driver for Lynxmotion LSS servos"
+documentation = "https://docs.rs/lss_driver"
 homepage = "https://github.com/dmweis/lss_driver"
 repository = "https://github.com/dmweis/lss_driver"
 readme = "README.md"
