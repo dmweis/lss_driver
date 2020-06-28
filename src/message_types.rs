@@ -27,7 +27,7 @@ impl Error for PacketParsingError {
 /// Colors for the LED on the servo
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LedColor {
-    // No color
+    /// No color
     Off = 0,
     Red = 1,
     Green = 2,
@@ -71,7 +71,7 @@ pub enum MotorStatus {
     OutsideLimits = 7,
     Stuck = 8,
     Blocked = 9,
-    // You can use `query_safety_status` to see more details
+    /// You can use `query_safety_status` to see more details
     SafeMode = 10,
 }
 
@@ -101,14 +101,14 @@ impl MotorStatus {
 /// if `query_status` doesn't return `SafeMode` this should be `NoLimits`
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum SafeModeStatus {
-    // Motor is not in safety mode
+    /// Motor is not in safety mode
     NoLimits = 0,
-    // This probably means that motor was overloaded
+    /// This probably means that motor was overloaded
     CurrentLimit = 1,
-    // Voltage is either too high or too low
-    // Query voltage to get more info
+    /// Voltage is either too high or too low.  
+    /// Query voltage to get more info
     InputVoltageOutOfRange = 2,
-    // You can query temperature to see if it's high
+    /// You can query temperature to see if it's high
     TemperatureLimit = 3,
 }
 
@@ -130,14 +130,14 @@ impl SafeModeStatus {
 /// Version of the motor
 #[derive(Clone, Debug, PartialEq)]
 pub enum Model {
-    // Standard model
+    /// Standard model
     ST1,
-    // High speed model
+    /// High speed model
     HS1,
-    // High torque model
+    /// High torque model
     HT1,
-    // Other model
-    // Shouldn't happen unless new motors were added later
+    /// Other model.  
+    /// Shouldn't happen unless new motors were added later
     Other(String),
 }
 
