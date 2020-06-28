@@ -57,6 +57,30 @@ mod serial_driver;
 use serial_driver::{FramedDriver, FramedSerialDriver, LssCommand};
 use std::{error::Error, str};
 
+/// Error triggered if we fail parsing incoming packet into a data structure
+#[derive(Debug)]
+pub struct PacketParsingError {
+    message: String,
+}
+
+impl PacketParsingError {
+    fn new(message: String) -> Box<dyn Error> {
+        Box::new(PacketParsingError { message })
+    }
+}
+
+impl std::fmt::Display for PacketParsingError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Failed parsing incoming packet")
+    }
+}
+
+impl Error for PacketParsingError {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+
 /// Colors for the LED on the servo
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub enum LedColor {
@@ -82,7 +106,10 @@ impl LedColor {
             5 => Ok(LedColor::Cyan),
             6 => Ok(LedColor::Magenta),
             7 => Ok(LedColor::White),
-            _ => Err("Could not find color")?,
+            value => Err(PacketParsingError::new(format!(
+                "Failed parsing LedColor from {}",
+                value
+            ))),
         }
     }
 }
@@ -119,7 +146,10 @@ impl MotorStatus {
             8 => Ok(MotorStatus::Stuck),
             9 => Ok(MotorStatus::Blocked),
             10 => Ok(MotorStatus::SafeMode),
-            _ => Err("Could not find status")?,
+            value => Err(PacketParsingError::new(format!(
+                "Failed parsing MotorStatus from {}",
+                value
+            ))),
         }
     }
 }
@@ -146,7 +176,10 @@ impl SafeModeStatus {
             1 => Ok(SafeModeStatus::CurrentLimit),
             2 => Ok(SafeModeStatus::InputVoltageOutOfRange),
             3 => Ok(SafeModeStatus::TemperatureLimit),
-            _ => Err("Could not find safe status")?,
+            value => Err(PacketParsingError::new(format!(
+                "Failed parsing SafeModeStatus from {}",
+                value
+            ))),
         }
     }
 }
@@ -1034,6 +1067,7 @@ mod tests {
         30
     );
 
+    // test telemetry queries
     test_query!(
         test_query_voltage,
         "#5QV\r",
@@ -1078,6 +1112,7 @@ mod tests {
         "12345678".to_owned()
     );
 
+    // Test blinking modes
     test_command!(
         test_blinking_mode_1,
         "#5CLB0\r",
