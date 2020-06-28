@@ -1,8 +1,8 @@
-use bytes::{BytesMut, BufMut};
-use std::{ str, io, error::Error };
-use tokio_util::codec::{Decoder, Encoder};
 use async_trait::async_trait;
-use futures::{ SinkExt, StreamExt };
+use bytes::{BufMut, BytesMut};
+use futures::{SinkExt, StreamExt};
+use std::{error::Error, io, str};
+use tokio_util::codec::{Decoder, Encoder};
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct LssCommand {
@@ -33,21 +33,17 @@ impl LssCommand {
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct LssResponse {
-    message: String
+    message: String,
 }
 
 impl LssResponse {
     pub fn new(message: String) -> LssResponse {
-        LssResponse {
-            message
-        }
+        LssResponse { message }
     }
 
     pub fn separate(&self, separator: &str) -> Result<(u8, i32), Box<dyn Error>> {
         let len = self.message.len();
-        let mut split = self
-            .message[1..len-1]
-            .split(separator);
+        let mut split = self.message[1..len - 1].split(separator);
         let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
         let value: i32 = split.next().ok_or("Failed to extract value")?.parse()?;
         Ok((id, value))
@@ -55,9 +51,7 @@ impl LssResponse {
 
     pub fn separate_string(&self, separator: &str) -> Result<(u8, String), Box<dyn Error>> {
         let len = self.message.len();
-        let mut split = self
-            .message[1..len-1]
-            .split(separator);
+        let mut split = self.message[1..len - 1].split(separator);
         let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
         let value = split.next().ok_or("Failed to extract value")?;
         Ok((id, value.to_owned()))
@@ -65,13 +59,11 @@ impl LssResponse {
 
     /// Similar to separate but doesn't parse the ID
     /// This is useful for queries that don't return ID
-    /// 
+    ///
     /// Such as QID
     pub fn get_val(&self, separator: &str) -> Result<i32, Box<dyn Error>> {
         let len = self.message.len();
-        let split = self
-            .message[1..len-1]
-            .split(separator);
+        let split = self.message[1..len - 1].split(separator);
         let value: i32 = split.last().ok_or("Failed to extract value")?.parse()?;
         Ok(value)
     }
@@ -130,7 +122,10 @@ impl FramedSerialDriver {
         })
     }
 
-    pub fn with_baud_rate(port: &str, baud_rate: u32) -> Result<FramedSerialDriver, Box<dyn Error>> {
+    pub fn with_baud_rate(
+        port: &str,
+        baud_rate: u32,
+    ) -> Result<FramedSerialDriver, Box<dyn Error>> {
         let mut settings = tokio_serial::SerialPortSettings::default();
         settings.baud_rate = baud_rate;
         settings.timeout = std::time::Duration::from_millis(TIMEOUT);
@@ -149,11 +144,14 @@ impl FramedDriver for FramedSerialDriver {
     }
 
     async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>> {
-        let response = self.framed_port.next().await.ok_or("Failed receive message")??;
+        let response = self
+            .framed_port
+            .next()
+            .await
+            .ok_or("Failed receive message")??;
         Ok(response)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

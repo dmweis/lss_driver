@@ -1,16 +1,12 @@
-use lss_driver;
 use clap::Clap;
+use lss_driver;
 
 #[derive(Clap)]
 #[clap()]
 struct Args {
-    #[clap(
-        about = "Serial port to use"
-    )]
+    #[clap(about = "Serial port to use")]
     port: String,
-    #[clap(
-        about = "Position to move to"
-    )]
+    #[clap(about = "Position to move to")]
     position: f32,
 }
 

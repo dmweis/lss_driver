@@ -1,36 +1,36 @@
 //! # Lynxmotion Smart Servo Driver
-//! 
+//!
 //! [![Crates.io](https://img.shields.io/crates/v/lss_driver.svg)](https://crates.io/crates/lss_driver)  
 //! [![Docs](https://docs.rs/lss_driver/badge.svg)](https://docs.rs/lss_driver)  
 //! [![Rust](https://github.com/dmweis/lss_driver/workflows/Rust/badge.svg)](https://github.com/dmweis/lss_driver/actions)  
 //! [![codecov](https://codecov.io/gh/dmweis/lss_driver/branch/master/graph/badge.svg)](https://codecov.io/gh/dmweis/lss_driver)
 //! [![Crates.io](https://img.shields.io/crates/l/lss_driver)](https://github.com/dmweis/lss_driver)
-//! 
+//!
 //! This crate provides an asynchronous serial driver the the Lynxmotion smart servos.  
-//! 
+//!
 //! You can read more about the servos on the official [robotshop wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/)  
-//! 
+//!
 //! ## Driver
-//! 
+//!
 //! The Smart servos are controlled over a serial UART protocol.  
-//! 
+//!
 //! You can read about the protocol [here](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/)
 //! It's highly recommended to at least skim the protocol page before trying to use this driver.  
-//! 
+//!
 //! This driver currently doesn't implement all features from the protocol.  
 //! Some missing features are modifiers and setup commands.  
 //! If there are any missing commands or features you'd like added feel free to raise a PR or an issue.  
-//! 
+//!
 //! This driver uses `async/await`. As a result you will need to use an async runtime.
 //! The driver is based on [tokio-serial](https://github.com/berkowski/tokio-serial) so tokio would be a good choice but any should work.
-//! 
+//!
 //! ## Usage
-//! 
+//!
 //! This crate comes with multiple [examples](https://github.com/dmweis/lss_driver/tree/master/examples).  
 //! These are a good start if you want to learn how to use it.  
-//! 
+//!
 //! ```no_run
-//! 
+//!
 //! #[tokio::main]
 //! async fn main() {
 //!     // Create a driver on port `COM14` or `/dev/ttyUSB0`...
@@ -43,19 +43,19 @@
 //!     // Set color of servo with ID 5 to Magenta
 //!     driver.set_color(5, lss_driver::LedColor::Magenta).await.unwrap();
 //! }
-//! 
+//!
 //! ```
-//! 
+//!
 //! ## Building
-//! 
+//!
 //! This package shouldn't depend on any native libraries.  
 //! Rust [serialport](https://gitlab.com/susurrus/serialport-rs) depends on `pkg-config` and `libudev-dev` on GNU Linux but they should be disabled for this crate.  
 //! If you do run into issues with them failing it may be worth looking into their dependencies and raising an issue here.  
-//! 
+//!
 mod serial_driver;
 
-use serial_driver::{ FramedSerialDriver, FramedDriver, LssCommand };
-use std::{ str, error::Error };
+use serial_driver::{FramedDriver, FramedSerialDriver, LssCommand};
+use std::{error::Error, str};
 
 /// Colors for the LED on the servo
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -160,7 +160,7 @@ pub enum Model {
     HS1,
     // High torque model
     HT1,
-    // Other model 
+    // Other model
     // Shouldn't happen unless new motors were added later
     Other(String),
 }
@@ -244,20 +244,18 @@ impl LSSDriver {
     ///
     /// This is used for tests and can be used if you want to reimplement the driver over network
     pub fn with_driver(driver: Box<dyn FramedDriver>) -> LSSDriver {
-        LSSDriver {
-            driver,
-        }
+        LSSDriver { driver }
     }
 
     /// Query value of ID
     /// Especially useful with BROADCAST_ID
-    /// 
+    ///
     /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HIdentificationNumber28ID29)
     ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    /// 
+    ///
     /// # Example
     ///
     /// ```no_run
@@ -277,7 +275,7 @@ impl LSSDriver {
     /// Set value of ID
     /// Saved to EEPROM
     /// Only takes effect after restart
-    /// 
+    ///
     /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HIdentificationNumber28ID29)
     ///
     /// # Arguments
@@ -285,7 +283,9 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     /// * `new_id` - ID You want that servo to have
     pub async fn set_id(&mut self, id: u8, new_id: u8) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "CID", new_id as i32)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "CID", new_id as i32))
+            .await?;
         Ok(())
     }
 
@@ -296,7 +296,9 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     /// * `color` - Color to set
     pub async fn set_color(&mut self, id: u8, color: LedColor) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "LED", color as i32)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "LED", color as i32))
+            .await?;
         Ok(())
     }
 
@@ -308,7 +310,7 @@ impl LSSDriver {
     pub async fn query_color(&mut self, id: u8) -> Result<LedColor, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QLED")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QLED")?;
+        let (_, value) = response.separate("QLED")?;
         Ok(LedColor::from_i32(value)?)
     }
 
@@ -333,7 +335,9 @@ impl LSSDriver {
     /// ```
     pub async fn move_to_position(&mut self, id: u8, position: f32) -> Result<(), Box<dyn Error>> {
         let angle = (position * 10.0).round() as i32;
-        self.driver.send(LssCommand::with_param(id, "D", angle)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "D", angle))
+            .await?;
         Ok(())
     }
 
@@ -347,7 +351,7 @@ impl LSSDriver {
     pub async fn query_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QD")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QD")?;
+        let (_, value) = response.separate("QD")?;
         Ok(value as f32 / 10.0)
     }
 
@@ -361,7 +365,7 @@ impl LSSDriver {
     pub async fn query_target_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QDT")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QDT")?;
+        let (_, value) = response.separate("QDT")?;
         Ok(value as f32 / 10.0)
     }
 
@@ -372,7 +376,9 @@ impl LSSDriver {
     /// * `id` - ID of servo you want to control
     /// * `speed` - Speed in °/s
     pub async fn set_rotation_speed(&mut self, id: u8, speed: f32) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "WD", speed as i32)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "WD", speed as i32))
+            .await?;
         Ok(())
     }
 
@@ -384,35 +390,35 @@ impl LSSDriver {
     pub async fn query_rotation_speed(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QWD")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QWD")?;
+        let (_, value) = response.separate("QWD")?;
         Ok(value as f32)
     }
 
     /// Query status of a motor
     ///
     /// View more on [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HQueryStatus28Q29)
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
     pub async fn query_status(&mut self, id: u8) -> Result<MotorStatus, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "Q")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("Q")?;
+        let (_, value) = response.separate("Q")?;
         Ok(MotorStatus::from_i32(value)?)
     }
 
     /// Query safety status of a motor
     ///
     /// View more on [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HQueryStatus28Q29)
-    /// 
+    ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
     pub async fn query_safety_status(&mut self, id: u8) -> Result<SafeModeStatus, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "Q1")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("Q")?;
+        let (_, value) = response.separate("Q")?;
         Ok(SafeModeStatus::from_i32(value)?)
     }
 
@@ -431,7 +437,9 @@ impl LSSDriver {
         id: u8,
         motion_profile: bool,
     ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "EM", motion_profile as i32)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "EM", motion_profile as i32))
+            .await?;
         Ok(())
     }
 
@@ -444,12 +452,10 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_motion_profile(
-        &mut self,
-        id: u8) -> Result<bool, Box<dyn Error>> {
+    pub async fn query_motion_profile(&mut self, id: u8) -> Result<bool, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QEM")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QEM")?;
+        let (_, value) = response.separate("QEM")?;
         Ok(value != 0)
     }
 
@@ -457,7 +463,7 @@ impl LSSDriver {
     ///
     /// Change the Filter Position Count value for this session.
     /// Affects motion only when motion profile is disabled (EM0)
-    /// 
+    ///
     /// more info at the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HFilterPositionCount28FPC29)
     ///
     /// # Arguments
@@ -469,7 +475,13 @@ impl LSSDriver {
         id: u8,
         filter_position_count: u8,
     ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "FPC", filter_position_count as i32)).await?;
+        self.driver
+            .send(LssCommand::with_param(
+                id,
+                "FPC",
+                filter_position_count as i32,
+            ))
+            .await?;
         Ok(())
     }
 
@@ -477,23 +489,21 @@ impl LSSDriver {
     ///
     /// Query the Filter Position Count value.
     /// Affects motion only when motion profile is disabled (EM0)
-    /// 
+    ///
     /// more info at the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HFilterPositionCount28FPC29)
     ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_filter_position_count(
-        &mut self,
-        id: u8) -> Result<u8, Box<dyn Error>> {
+    pub async fn query_filter_position_count(&mut self, id: u8) -> Result<u8, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QFPC")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QFPC")?;
+        let (_, value) = response.separate("QFPC")?;
         Ok(value as u8)
     }
 
     /// Set angular stiffness
-    /// 
+    ///
     /// Read more about [Angular stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularStiffness28AS29)
     ///
     /// # Arguments
@@ -505,28 +515,28 @@ impl LSSDriver {
         id: u8,
         angular_stiffness: i32,
     ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "AS", angular_stiffness)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "AS", angular_stiffness))
+            .await?;
         Ok(())
     }
 
     /// Query angular stiffness
-    /// 
+    ///
     /// Read more about [Angular stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularStiffness28AS29)
     ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_angular_stiffness(
-        &mut self,
-        id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_stiffness(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QAS")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QAS")?;
+        let (_, value) = response.separate("QAS")?;
         Ok(value)
     }
 
     /// Set angular holding stiffness
-    /// 
+    ///
     /// Read more about [Angular holding stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularHoldingStiffness28AH29)
     ///
     /// # Arguments
@@ -538,31 +548,31 @@ impl LSSDriver {
         id: u8,
         angular_holding: i32,
     ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "AH", angular_holding)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "AH", angular_holding))
+            .await?;
         Ok(())
     }
 
     /// Query angular holding stiffness
-    /// 
+    ///
     /// Read more about [Angular holding stiffness](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularHoldingStiffness28AH29)
     ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    pub async fn query_angular_holding_stiffness(
-        &mut self,
-        id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_holding_stiffness(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QAH")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QAH")?;
+        let (_, value) = response.separate("QAH")?;
         Ok(value)
     }
 
     /// Set angular acceleration in degrees per second squared (°/s2)
-    /// 
+    ///
     /// Accepts values between 1 and 100. Increments of 10
     /// Only used when motion profile is enabled
-    /// 
+    ///
     /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularAcceleration28AA29)
     ///
     /// # Arguments
@@ -574,34 +584,34 @@ impl LSSDriver {
         id: u8,
         angular_acceleration: i32,
     ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "AA", angular_acceleration)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "AA", angular_acceleration))
+            .await?;
         Ok(())
     }
 
     /// Query angular acceleration in degrees per second squared (°/s2)
-    /// 
+    ///
     /// Accepts values between 1 and 100. Increments  of 10
     /// Only used when motion profile is enabled
-    /// 
+    ///
     /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularAcceleration28AA29)
     ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_angular_acceleration(
-        &mut self,
-        id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_acceleration(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QAA")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QAA")?;
+        let (_, value) = response.separate("QAA")?;
         Ok(value)
     }
 
     /// Set angular deceleration in degrees per second squared (°/s2)
-    /// 
+    ///
     /// Accepts values between 1 and 100. Increments of 10
     /// Only used when motion profile is enabled
-    /// 
+    ///
     /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularDeceleration28AD29)
     ///
     /// # Arguments
@@ -613,26 +623,26 @@ impl LSSDriver {
         id: u8,
         angular_deceleration: i32,
     ) -> Result<(), Box<dyn Error>> {
-        self.driver.send(LssCommand::with_param(id, "AD", angular_deceleration)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "AD", angular_deceleration))
+            .await?;
         Ok(())
     }
 
     /// Query angular deceleration in degrees per second squared (°/s2)
-    /// 
+    ///
     /// Accepts values between 1 and 100. Increments  of 10
     /// Only used when motion profile is enabled
-    /// 
+    ///
     /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularDeceleration28AD29)
     ///
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_angular_deceleration(
-        &mut self,
-        id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_deceleration(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QAD")).await?;
         let response = self.driver.receive().await?;
-        let (_, value)= response.separate("QAD")?;
+        let (_, value) = response.separate("QAD")?;
         Ok(value)
     }
 
@@ -743,25 +753,29 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `blinking_mode` - Blinking mode desired. Can be combination to make motor blink during multiple modes
-    pub async fn set_led_blinking(&mut self, id: u8, blinking_mode: Vec<LedBlinking>) -> Result<(), Box<dyn Error>> {
+    pub async fn set_led_blinking(
+        &mut self,
+        id: u8,
+        blinking_mode: Vec<LedBlinking>,
+    ) -> Result<(), Box<dyn Error>> {
         let sum = blinking_mode
             .iter()
             .map(|item| *item as i32)
             .sum::<i32>()
             .min(LedBlinking::AlwaysBlink as i32);
-        self.driver.send(LssCommand::with_param(id, "CLB", sum)).await?;
+        self.driver
+            .send(LssCommand::with_param(id, "CLB", sum))
+            .await?;
         Ok(())
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use tokio;
-    use async_trait::async_trait;
     use super::serial_driver::LssResponse;
-
+    use super::*;
+    use async_trait::async_trait;
+    use tokio;
 
     struct MockedDriver {
         expected_send: Vec<String>,
@@ -784,7 +798,6 @@ mod tests {
     #[tokio::test]
     async fn async_test_builds() {}
 
-
     #[tokio::test]
     async fn test_limp_color_move_hold() {
         let mocked_framed_driver = MockedDriver {
@@ -795,9 +808,7 @@ mod tests {
                 "#2LED1\r".to_owned(),
                 "#1L\r".to_owned(),
             ],
-            receive: vec![
-                "*5QV11200\r".to_owned(),
-            ],
+            receive: vec!["*5QV11200\r".to_owned()],
         };
         let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
         driver.limp(1).await.unwrap();
@@ -819,15 +830,13 @@ mod tests {
             #[tokio::test]
             async fn $name() {
                 let mocked_framed_driver = MockedDriver {
-                    expected_send: vec![
-                        $expected.to_owned(),
-                    ],
+                    expected_send: vec![$expected.to_owned()],
                     receive: vec![],
                 };
                 let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
                 $command;
             }
-        }
+        };
     }
 
     macro_rules! test_query {
@@ -835,78 +844,289 @@ mod tests {
             #[tokio::test]
             async fn $name() {
                 let mocked_framed_driver = MockedDriver {
-                    expected_send: vec![
-                        $expected.to_owned(),
-                    ],
-                    receive: vec![
-                        $recv.to_owned(),
-                    ],
+                    expected_send: vec![$expected.to_owned()],
+                    receive: vec![$recv.to_owned()],
                 };
                 let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
                 let res = $command;
                 assert_eq!(res, $val);
             }
-        }
+        };
     }
 
-    test_command!(test_hold_command, "#4H\r", driver.halt_hold(4).await.unwrap());
-    test_query!(test_query_id, "#254QID\r", "*QID5\r", driver.query_id(BROADCAST_ID).await.unwrap(), 5);
+    test_command!(
+        test_hold_command,
+        "#4H\r",
+        driver.halt_hold(4).await.unwrap()
+    );
+    test_query!(
+        test_query_id,
+        "#254QID\r",
+        "*QID5\r",
+        driver.query_id(BROADCAST_ID).await.unwrap(),
+        5
+    );
     test_command!(test_set_id, "#1CID2\r", driver.set_id(1, 2).await.unwrap());
 
     // Motion
-    test_command!(test_move_to, "#1D200\r", driver.move_to_position(1, 20.0).await.unwrap());
-    test_query!(test_query_current_position, "#5QD\r", "*5QD132\r", driver.query_position(5).await.unwrap(), 13.2);
-    test_query!(test_query_target_position, "#5QDT\r", "*5QDT6783\r", driver.query_target_position(5).await.unwrap(), 678.3);
-    
+    test_command!(
+        test_move_to,
+        "#1D200\r",
+        driver.move_to_position(1, 20.0).await.unwrap()
+    );
+    test_query!(
+        test_query_current_position,
+        "#5QD\r",
+        "*5QD132\r",
+        driver.query_position(5).await.unwrap(),
+        13.2
+    );
+    test_query!(
+        test_query_target_position,
+        "#5QDT\r",
+        "*5QDT6783\r",
+        driver.query_target_position(5).await.unwrap(),
+        678.3
+    );
+
     // Wheel mode
-    test_command!(test_set_rotation_speed_degrees, "#5WD90\r", driver.set_rotation_speed(5, 90.0).await.unwrap());
-    test_query!(test_query_rotation_speed_degrees, "#5QWD\r", "*5QWD90\r", driver.query_rotation_speed(5).await.unwrap(), 90.0);
-    
+    test_command!(
+        test_set_rotation_speed_degrees,
+        "#5WD90\r",
+        driver.set_rotation_speed(5, 90.0).await.unwrap()
+    );
+    test_query!(
+        test_query_rotation_speed_degrees,
+        "#5QWD\r",
+        "*5QWD90\r",
+        driver.query_rotation_speed(5).await.unwrap(),
+        90.0
+    );
+
     // Status
-    test_query!(test_unknown_status, "#5Q\r", "*5Q0\r", driver.query_status(5).await.unwrap(), MotorStatus::Unknown);
-    test_query!(test_holding_status, "#5Q\r", "*5Q6\r", driver.query_status(5).await.unwrap(), MotorStatus::Holding);
-    test_query!(test_safety_status, "#5Q1\r", "*5Q3\r", driver.query_safety_status(5).await.unwrap(), SafeModeStatus::TemperatureLimit);
+    test_query!(
+        test_unknown_status,
+        "#5Q\r",
+        "*5Q0\r",
+        driver.query_status(5).await.unwrap(),
+        MotorStatus::Unknown
+    );
+    test_query!(
+        test_holding_status,
+        "#5Q\r",
+        "*5Q6\r",
+        driver.query_status(5).await.unwrap(),
+        MotorStatus::Holding
+    );
+    test_query!(
+        test_safety_status,
+        "#5Q1\r",
+        "*5Q3\r",
+        driver.query_safety_status(5).await.unwrap(),
+        SafeModeStatus::TemperatureLimit
+    );
 
     test_command!(test_limp, "#5L\r", driver.limp(5).await.unwrap());
     test_command!(test_halt_hold, "#5H\r", driver.halt_hold(5).await.unwrap());
 
     // LED
-    test_command!(test_set_led, "#5LED3\r", driver.set_color(5, LedColor::Blue).await.unwrap());
-    test_query!(test_query_led, "#5QLED\r", "*5QLED5\r", driver.query_color(5).await.unwrap(), LedColor::Cyan);
+    test_command!(
+        test_set_led,
+        "#5LED3\r",
+        driver.set_color(5, LedColor::Blue).await.unwrap()
+    );
+    test_query!(
+        test_query_led,
+        "#5QLED\r",
+        "*5QLED5\r",
+        driver.query_color(5).await.unwrap(),
+        LedColor::Cyan
+    );
 
     // motion profile
-    test_command!(test_motion_profile_on, "#5EM1\r", driver.set_motion_profile(5, true).await.unwrap());
-    test_command!(test_motion_profile_off, "#5EM0\r", driver.set_motion_profile(5, false).await.unwrap());
-    test_query!(test_query_motion_profile_on, "#5QEM\r", "*5QEM1\r", driver.query_motion_profile(5).await.unwrap(), true);
-    test_query!(test_query_motion_profile_off, "#5QEM\r", "*5QEM0\r", driver.query_motion_profile(5).await.unwrap(), false);
+    test_command!(
+        test_motion_profile_on,
+        "#5EM1\r",
+        driver.set_motion_profile(5, true).await.unwrap()
+    );
+    test_command!(
+        test_motion_profile_off,
+        "#5EM0\r",
+        driver.set_motion_profile(5, false).await.unwrap()
+    );
+    test_query!(
+        test_query_motion_profile_on,
+        "#5QEM\r",
+        "*5QEM1\r",
+        driver.query_motion_profile(5).await.unwrap(),
+        true
+    );
+    test_query!(
+        test_query_motion_profile_off,
+        "#5QEM\r",
+        "*5QEM0\r",
+        driver.query_motion_profile(5).await.unwrap(),
+        false
+    );
 
-    test_command!(test_set_filter_position_count, "#5FPC10\r", driver.set_filter_position_count(5, 10).await.unwrap());
-    test_query!(test_query_filter_position_count, "#5QFPC\r", "*5QFPC10\r", driver.query_filter_position_count(5).await.unwrap(), 10);
+    test_command!(
+        test_set_filter_position_count,
+        "#5FPC10\r",
+        driver.set_filter_position_count(5, 10).await.unwrap()
+    );
+    test_query!(
+        test_query_filter_position_count,
+        "#5QFPC\r",
+        "*5QFPC10\r",
+        driver.query_filter_position_count(5).await.unwrap(),
+        10
+    );
 
-    test_command!(test_set_angular_stiffness, "#5AS-2\r", driver.set_angular_stiffness(5, -2).await.unwrap());
-    test_query!(test_query_angular_stiffness, "#5QAS\r", "*5QAS-2\r", driver.query_angular_stiffness(5).await.unwrap(), -2);
+    test_command!(
+        test_set_angular_stiffness,
+        "#5AS-2\r",
+        driver.set_angular_stiffness(5, -2).await.unwrap()
+    );
+    test_query!(
+        test_query_angular_stiffness,
+        "#5QAS\r",
+        "*5QAS-2\r",
+        driver.query_angular_stiffness(5).await.unwrap(),
+        -2
+    );
 
-    test_command!(test_set_angular_holding_stiffness, "#5AH3\r", driver.set_angular_holding_stiffness(5, 3).await.unwrap());
-    test_query!(test_query_angular_holding_stiffness, "#5QAH\r", "*5QAH3\r", driver.query_angular_holding_stiffness(5).await.unwrap(), 3);
+    test_command!(
+        test_set_angular_holding_stiffness,
+        "#5AH3\r",
+        driver.set_angular_holding_stiffness(5, 3).await.unwrap()
+    );
+    test_query!(
+        test_query_angular_holding_stiffness,
+        "#5QAH\r",
+        "*5QAH3\r",
+        driver.query_angular_holding_stiffness(5).await.unwrap(),
+        3
+    );
 
-    test_command!(test_set_angular_acceleration, "#5AA30\r", driver.set_angular_acceleration(5, 30).await.unwrap());
-    test_query!(test_query_angular_acceleration, "#5QAA\r", "*5QAA30\r", driver.query_angular_acceleration(5).await.unwrap(), 30);
+    test_command!(
+        test_set_angular_acceleration,
+        "#5AA30\r",
+        driver.set_angular_acceleration(5, 30).await.unwrap()
+    );
+    test_query!(
+        test_query_angular_acceleration,
+        "#5QAA\r",
+        "*5QAA30\r",
+        driver.query_angular_acceleration(5).await.unwrap(),
+        30
+    );
 
-    test_command!(test_set_angular_deceleration, "#5AD30\r", driver.set_angular_deceleration(5, 30).await.unwrap());
-    test_query!(test_query_angular_deceleration, "#5QAD\r", "*5QAD30\r", driver.query_angular_deceleration(5).await.unwrap(), 30);
-    
-    test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.query_voltage(5).await.unwrap(), 11.2);
-    test_query!(test_query_temperature, "#5QT\r", "*5QT564\r", driver.query_temperature(5).await.unwrap(), 56.4);
-    test_query!(test_query_current, "#5QC\r", "*5QC140\r", driver.query_current(5).await.unwrap(), 0.14);
-    
-    test_query!(test_query_model_string, "#5QMS\r", "*5QMSLSS-HS1\r", driver.query_model(5).await.unwrap(), Model::HS1);
-    test_query!(test_query_firmware_version, "#5QF\r", "*5QF368\r", driver.query_firmware_version(5).await.unwrap(), "368".to_owned());
-    test_query!(test_query_serial_number, "#5QN\r", "*5QN12345678\r", driver.query_serial_number(5).await.unwrap(), "12345678".to_owned());
+    test_command!(
+        test_set_angular_deceleration,
+        "#5AD30\r",
+        driver.set_angular_deceleration(5, 30).await.unwrap()
+    );
+    test_query!(
+        test_query_angular_deceleration,
+        "#5QAD\r",
+        "*5QAD30\r",
+        driver.query_angular_deceleration(5).await.unwrap(),
+        30
+    );
 
-    test_command!(test_blinking_mode_1, "#5CLB0\r", driver.set_led_blinking(5, vec![LedBlinking::NoBlinking]).await.unwrap());
-    test_command!(test_blinking_mode_2, "#5CLB1\r", driver.set_led_blinking(5, vec![LedBlinking::Limp]).await.unwrap());
-    test_command!(test_blinking_mode_3, "#5CLB2\r", driver.set_led_blinking(5, vec![LedBlinking::Holding]).await.unwrap());
-    test_command!(test_blinking_mode_4, "#5CLB12\r", driver.set_led_blinking(5, vec![LedBlinking::Accelerating, LedBlinking::Decelerating]).await.unwrap());
-    test_command!(test_blinking_mode_5, "#5CLB48\r", driver.set_led_blinking(5, vec![LedBlinking::Free, LedBlinking::Travelling]).await.unwrap());
-    test_command!(test_blinking_mode_6, "#5CLB63\r", driver.set_led_blinking(5, vec![LedBlinking::AlwaysBlink]).await.unwrap());
+    test_query!(
+        test_query_voltage,
+        "#5QV\r",
+        "*5QV11200\r",
+        driver.query_voltage(5).await.unwrap(),
+        11.2
+    );
+    test_query!(
+        test_query_temperature,
+        "#5QT\r",
+        "*5QT564\r",
+        driver.query_temperature(5).await.unwrap(),
+        56.4
+    );
+    test_query!(
+        test_query_current,
+        "#5QC\r",
+        "*5QC140\r",
+        driver.query_current(5).await.unwrap(),
+        0.14
+    );
+
+    test_query!(
+        test_query_model_string,
+        "#5QMS\r",
+        "*5QMSLSS-HS1\r",
+        driver.query_model(5).await.unwrap(),
+        Model::HS1
+    );
+    test_query!(
+        test_query_firmware_version,
+        "#5QF\r",
+        "*5QF368\r",
+        driver.query_firmware_version(5).await.unwrap(),
+        "368".to_owned()
+    );
+    test_query!(
+        test_query_serial_number,
+        "#5QN\r",
+        "*5QN12345678\r",
+        driver.query_serial_number(5).await.unwrap(),
+        "12345678".to_owned()
+    );
+
+    test_command!(
+        test_blinking_mode_1,
+        "#5CLB0\r",
+        driver
+            .set_led_blinking(5, vec![LedBlinking::NoBlinking])
+            .await
+            .unwrap()
+    );
+    test_command!(
+        test_blinking_mode_2,
+        "#5CLB1\r",
+        driver
+            .set_led_blinking(5, vec![LedBlinking::Limp])
+            .await
+            .unwrap()
+    );
+    test_command!(
+        test_blinking_mode_3,
+        "#5CLB2\r",
+        driver
+            .set_led_blinking(5, vec![LedBlinking::Holding])
+            .await
+            .unwrap()
+    );
+    test_command!(
+        test_blinking_mode_4,
+        "#5CLB12\r",
+        driver
+            .set_led_blinking(
+                5,
+                vec![LedBlinking::Accelerating, LedBlinking::Decelerating]
+            )
+            .await
+            .unwrap()
+    );
+    test_command!(
+        test_blinking_mode_5,
+        "#5CLB48\r",
+        driver
+            .set_led_blinking(5, vec![LedBlinking::Free, LedBlinking::Travelling])
+            .await
+            .unwrap()
+    );
+    test_command!(
+        test_blinking_mode_6,
+        "#5CLB63\r",
+        driver
+            .set_led_blinking(5, vec![LedBlinking::AlwaysBlink])
+            .await
+            .unwrap()
+    );
 }

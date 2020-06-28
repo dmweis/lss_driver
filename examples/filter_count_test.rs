@@ -1,14 +1,12 @@
-use lss_driver;
 use async_std::task::sleep;
-use std::time::Duration;
 use clap::Clap;
+use lss_driver;
+use std::time::Duration;
 
 #[derive(Clap)]
 #[clap()]
 struct Args {
-    #[clap(
-        about = "Serial port to use"
-    )]
+    #[clap(about = "Serial port to use")]
     port: String,
 }
 

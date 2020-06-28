@@ -1,12 +1,10 @@
-use lss_driver;
 use clap::Clap;
+use lss_driver;
 
 #[derive(Clap)]
 #[clap()]
 struct Args {
-    #[clap(
-        about = "Serial port to use"
-    )]
+    #[clap(about = "Serial port to use")]
     port: String,
 }
 
@@ -18,6 +16,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("Temperature is {} °C", driver.query_temperature(5).await?);
     println!("Current is {} A", driver.query_current(5).await?);
     println!("Position is {} degrees", driver.query_position(5).await?);
-    println!("Filter position count is {}", driver.query_filter_position_count(5).await?);
+    println!(
+        "Filter position count is {}",
+        driver.query_filter_position_count(5).await?
+    );
     Ok(())
 }
