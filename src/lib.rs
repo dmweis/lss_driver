@@ -560,12 +560,12 @@ impl LSSDriver {
         Ok(())
     }
 
-    /// Read voltage of motor in volts
+    /// Query voltage of motor in volts
     ///
     /// # Arguments
     ///
-    /// * `id` - ID of servo you want to read from
-    pub async fn read_voltage(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    /// * `id` - ID of servo you want to Query
+    pub async fn query_voltage(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         // response message looks like *5QV11200<cr>
         // Response is in mV
         self.driver.send(LssCommand::simple(id, "QV")).await?;
@@ -574,12 +574,12 @@ impl LSSDriver {
         Ok(value as f32 / 1000.0)
     }
 
-    /// Read temperature of motor in celsius
+    /// Query temperature of motor in celsius
     ///
     /// # Arguments
     ///
-    /// * `id` - ID of servo you want to read from
-    pub async fn read_temperature(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    /// * `id` - ID of servo you want to Query
+    pub async fn query_temperature(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         // response message looks like *5QT441<cr>
         // Response is in 10s of celsius
         // 441 would be 44.1 celsius
@@ -589,12 +589,12 @@ impl LSSDriver {
         Ok(value as f32 / 10.0)
     }
 
-    /// Read current of motor in Amps
+    /// Query current of motor in Amps
     ///
     /// # Arguments
     ///
-    /// * `id` - ID of servo you want to read from
-    pub async fn read_current(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    /// * `id` - ID of servo you want to Query
+    pub async fn query_current(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
         // response message looks like *5QT441<cr>
         // Response is in mA
         self.driver.send(LssCommand::simple(id, "QC")).await?;
@@ -654,7 +654,7 @@ mod tests {
         driver.set_color(2, LedColor::Red).await.unwrap();
         driver.move_to_position(3, 180.0).await.unwrap();
         driver.halt_hold(4).await.unwrap();
-        let voltage = driver.read_voltage(5).await.unwrap();
+        let voltage = driver.query_voltage(5).await.unwrap();
         assert_eq!(voltage, 11.2);
     }
 
@@ -694,7 +694,6 @@ mod tests {
     }
 
     test_command!(test_hold_command, "#4H\r", driver.halt_hold(4).await.unwrap());
-    test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.read_voltage(5).await.unwrap(), 11.2);
     test_query!(test_query_id, "#254QID\r", "*QID5\r", driver.query_id(BROADCAST_ID).await.unwrap(), 5);
     test_command!(test_set_id, "#1CID2\r", driver.set_id(1, 2).await.unwrap());
 
@@ -739,4 +738,8 @@ mod tests {
 
     test_command!(test_set_angular_deceleration, "#5AD30\r", driver.set_angular_deceleration(5, 30).await.unwrap());
     test_query!(test_query_angular_deceleration, "#5QAD\r", "*5QAD30\r", driver.query_angular_deceleration(5).await.unwrap(), 30);
+
+    test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.query_voltage(5).await.unwrap(), 11.2);
+    test_query!(test_query_temperature, "#5QT\r", "*5QT564\r", driver.query_temperature(5).await.unwrap(), 56.4);
+    test_query!(test_query_current, "#5QC\r", "*5QC140\r", driver.query_current(5).await.unwrap(), 0.14);
 }
