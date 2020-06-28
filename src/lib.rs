@@ -95,6 +95,25 @@ impl SafeModeStatus {
     }
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum Model {
+    ST1,
+    HS1,
+    HT1,
+    Other(String),
+}
+
+impl Model {
+    fn from_str(model: &str) -> Model {
+        match model {
+            "LSS-ST1" => Model::ST1,
+            "LSS-HS1" => Model::HS1,
+            "LSS-HT1" => Model::HT1,
+            other => Model::Other(other.to_owned()),
+        }
+    }
+}
+
 pub const BROADCAST_ID: u8 = 254;
 
 /// Driver for the LSS servo
@@ -602,6 +621,18 @@ impl LSSDriver {
         let (_, value) = response.separate("QC")?;
         Ok(value as f32 / 1000.0)
     }
+
+    /// Query model string
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to Query
+    pub async fn query_model(&mut self, id: u8) -> Result<Model, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QMS")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate_string("QMS")?;
+        Ok(Model::from_str(&value))
+    }
 }
 
 
@@ -656,6 +687,12 @@ mod tests {
         driver.halt_hold(4).await.unwrap();
         let voltage = driver.query_voltage(5).await.unwrap();
         assert_eq!(voltage, 11.2);
+    }
+
+    #[test]
+    fn model_parses_other() {
+        let model = Model::from_str("something");
+        assert_eq!(model, Model::Other("something".to_owned()));
     }
 
     macro_rules! test_command {
@@ -742,4 +779,6 @@ mod tests {
     test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.query_voltage(5).await.unwrap(), 11.2);
     test_query!(test_query_temperature, "#5QT\r", "*5QT564\r", driver.query_temperature(5).await.unwrap(), 56.4);
     test_query!(test_query_current, "#5QC\r", "*5QC140\r", driver.query_current(5).await.unwrap(), 0.14);
+
+    test_query!(test_query_model_string, "#5QMS\r", "*5QMSLSS-HS1\r", driver.query_model(5).await.unwrap(), Model::HS1);
 }

@@ -53,6 +53,16 @@ impl LssResponse {
         Ok((id, value))
     }
 
+    pub fn separate_string(&self, separator: &str) -> Result<(u8, String), Box<dyn Error>> {
+        let len = self.message.len();
+        let mut split = self
+            .message[1..len-1]
+            .split(separator);
+        let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
+        let value = split.next().ok_or("Failed to extract value")?;
+        Ok((id, value.to_owned()))
+    }
+
     /// Similar to separate but doesn't parse the ID
     /// This is useful for queries that don't return ID
     /// 
