@@ -193,6 +193,26 @@ mod tests {
     }
 
     #[test]
+    fn framing_encodes_single_command() {
+        let mut payload = BytesMut::default();
+        let mut codec = LssCodec {};
+        let command = LssCommand::simple(5, "QV");
+        codec.encode(command, &mut payload).unwrap();
+        assert_eq!(&payload[..], b"#5QV\r");
+    }
+
+    #[test]
+    fn framing_encodes_multiple_commands() {
+        let mut payload = BytesMut::default();
+        let mut codec = LssCodec {};
+        let command_1 = LssCommand::simple(5, "QV");
+        let command_2 = LssCommand::simple(5, "QT");
+        codec.encode(command_1, &mut payload).unwrap();
+        codec.encode(command_2, &mut payload).unwrap();
+        assert_eq!(&payload[..], b"#5QV\r#5QT\r");
+    }
+
+    #[test]
     fn simple_command_serializes() {
         let command = LssCommand::simple(1, "QV");
         assert_eq!(command.as_bytes(), "#1QV\r".as_bytes())
