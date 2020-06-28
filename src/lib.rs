@@ -626,12 +626,36 @@ impl LSSDriver {
     ///
     /// # Arguments
     ///
-    /// * `id` - ID of servo you want to Query
+    /// * `id` - ID of servo you want to query
     pub async fn query_model(&mut self, id: u8) -> Result<Model, Box<dyn Error>> {
         self.driver.send(LssCommand::simple(id, "QMS")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate_string("QMS")?;
         Ok(Model::from_str(&value))
+    }
+
+    /// Query firmware version
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_firmware_version(&mut self, id: u8) -> Result<String, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QF")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate_string("QF")?;
+        Ok(value)
+    }
+
+    /// Query serial number
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_serial_number(&mut self, id: u8) -> Result<String, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QN")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate_string("QN")?;
+        Ok(value)
     }
 }
 
@@ -781,4 +805,6 @@ mod tests {
     test_query!(test_query_current, "#5QC\r", "*5QC140\r", driver.query_current(5).await.unwrap(), 0.14);
 
     test_query!(test_query_model_string, "#5QMS\r", "*5QMSLSS-HS1\r", driver.query_model(5).await.unwrap(), Model::HS1);
+    test_query!(test_query_firmware_version, "#5QF\r", "*5QF368\r", driver.query_firmware_version(5).await.unwrap(), "368".to_owned());
+    test_query!(test_query_serial_number, "#5QN\r", "*5QN12345678\r", driver.query_serial_number(5).await.unwrap(), "12345678".to_owned());
 }
