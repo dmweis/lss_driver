@@ -114,6 +114,18 @@ impl Model {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub enum LedBlinking {
+    NoBlinking = 0,
+    Limp = 1,
+    Holding = 2,
+    Accelerating = 4,
+    Decelerating = 8,
+    Free = 16,
+    Travelling = 32,
+    AlwaysBlink = 63,
+}
+
 pub const BROADCAST_ID: u8 = 254;
 
 /// Driver for the LSS servo
@@ -657,6 +669,20 @@ impl LSSDriver {
         let (_, value) = response.separate_string("QN")?;
         Ok(value)
     }
+
+    /// Set LED blinking mode
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HConfigureLEDBlinking28CLB29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `blinking_mode` - Blinking mode desired. Can be combination of modes
+    pub async fn set_led_blinking(&mut self, id: u8, blinking_mode: Vec<LedBlinking>) -> Result<(), Box<dyn Error>> {
+        let sum = blinking_mode.iter().map(|item| *item as i32).sum();
+        self.driver.send(LssCommand::with_param(id, "CLB", sum)).await?;
+        Ok(())
+    }
 }
 
 
@@ -799,12 +825,19 @@ mod tests {
 
     test_command!(test_set_angular_deceleration, "#5AD30\r", driver.set_angular_deceleration(5, 30).await.unwrap());
     test_query!(test_query_angular_deceleration, "#5QAD\r", "*5QAD30\r", driver.query_angular_deceleration(5).await.unwrap(), 30);
-
+    
     test_query!(test_query_voltage, "#5QV\r", "*5QV11200\r", driver.query_voltage(5).await.unwrap(), 11.2);
     test_query!(test_query_temperature, "#5QT\r", "*5QT564\r", driver.query_temperature(5).await.unwrap(), 56.4);
     test_query!(test_query_current, "#5QC\r", "*5QC140\r", driver.query_current(5).await.unwrap(), 0.14);
-
+    
     test_query!(test_query_model_string, "#5QMS\r", "*5QMSLSS-HS1\r", driver.query_model(5).await.unwrap(), Model::HS1);
     test_query!(test_query_firmware_version, "#5QF\r", "*5QF368\r", driver.query_firmware_version(5).await.unwrap(), "368".to_owned());
     test_query!(test_query_serial_number, "#5QN\r", "*5QN12345678\r", driver.query_serial_number(5).await.unwrap(), "12345678".to_owned());
+
+    test_command!(test_blinking_mode_1, "#5CLB0\r", driver.set_led_blinking(5, vec![LedBlinking::NoBlinking]).await.unwrap());
+    test_command!(test_blinking_mode_2, "#5CLB1\r", driver.set_led_blinking(5, vec![LedBlinking::Limp]).await.unwrap());
+    test_command!(test_blinking_mode_3, "#5CLB2\r", driver.set_led_blinking(5, vec![LedBlinking::Holding]).await.unwrap());
+    test_command!(test_blinking_mode_4, "#5CLB12\r", driver.set_led_blinking(5, vec![LedBlinking::Accelerating, LedBlinking::Decelerating]).await.unwrap());
+    test_command!(test_blinking_mode_5, "#5CLB48\r", driver.set_led_blinking(5, vec![LedBlinking::Free, LedBlinking::Travelling]).await.unwrap());
+    test_command!(test_blinking_mode_6, "#5CLB63\r", driver.set_led_blinking(5, vec![LedBlinking::AlwaysBlink]).await.unwrap());
 }
