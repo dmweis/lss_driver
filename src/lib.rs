@@ -116,6 +116,19 @@ impl LSSDriver {
         LSSDriver { driver }
     }
 
+    /// Soft reset
+    /// This command does a "soft reset" and reverts all commands to those stored in EEPROM
+    ///
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HReset)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to reset
+    pub async fn reset(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "RESET")).await?;
+        Ok(())
+    }
+
     /// Query value of ID
     /// Especially useful with BROADCAST_ID
     ///
@@ -991,6 +1004,15 @@ mod tests {
         "#5CLB63\r",
         driver
             .set_led_blinking(5, vec![LedBlinking::AlwaysBlink])
+            .await
+            .unwrap()
+    );
+
+    test_command!(
+        test_reset,
+        "#254RESET\r",
+        driver
+            .reset(BROADCAST_ID)
             .await
             .unwrap()
     );
