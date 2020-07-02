@@ -26,8 +26,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
     loop {
         for color in &colors {
-            driver.set_color(5, *color).await?;
-            sleep(Duration::from_secs_f32(0.3)).await;
+            driver.set_color(lss_driver::BROADCAST_ID, *color).await?;
+            sleep(Duration::from_secs_f32(0.02)).await;
         }
     }
 }
