@@ -1011,9 +1011,6 @@ mod tests {
     test_command!(
         test_reset,
         "#254RESET\r",
-        driver
-            .reset(BROADCAST_ID)
-            .await
-            .unwrap()
+        driver.reset(BROADCAST_ID).await.unwrap()
     );
 }
