@@ -2,6 +2,7 @@ use async_trait::async_trait;
 use bytes::{BufMut, BytesMut};
 use futures::{SinkExt, StreamExt};
 use std::{error::Error, io, str};
+use tokio::time::{timeout, Duration};
 use tokio_util::codec::{Decoder, Encoder};
 
 #[derive(PartialEq, Clone, Debug)]
@@ -144,10 +145,8 @@ impl FramedDriver for FramedSerialDriver {
     }
 
     async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>> {
-        let response = self
-            .framed_port
-            .next()
-            .await
+        let response = timeout(Duration::from_millis(TIMEOUT), self.framed_port.next())
+            .await?
             .ok_or("Failed receive message")??;
         Ok(response)
     }
