@@ -52,6 +52,12 @@
 //! Rust [serialport](https://gitlab.com/susurrus/serialport-rs) depends on `pkg-config` and `libudev-dev` on GNU Linux but they should be disabled for this crate.  
 //! If you do run into issues with them failing it may be worth looking into their dependencies and raising an issue here.  
 //!
+//! ## Disclaimer
+//!
+//! _This software is not officially endorsed by Lynxmotion or Robotshop!_
+//!
+//! All product names, logos, and brands are property of their respective owners. All company, product and service names used in this website are for identification purposes only. Use of these names, logos, and brands does not imply endorsement.
+
 mod message_types;
 mod serial_driver;
 
