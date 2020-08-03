@@ -534,6 +534,45 @@ impl LSSDriver {
         Ok(value)
     }
 
+    /// Set maximum motor duty
+    ///
+    /// Accepts values between 255 and 1023
+    /// Only used when motion profile is disabled
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HMaximumMotorDuty28MMD29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `maximum_motor_duty` - value for maximum motor duty (255 to 1023)
+    pub async fn set_maximum_motor_duty(
+        &mut self,
+        id: u8,
+        maximum_motor_duty: i32,
+    ) -> Result<(), Box<dyn Error>> {
+        self.driver
+            .send(LssCommand::with_param(id, "MMD", maximum_motor_duty))
+            .await?;
+        Ok(())
+    }
+
+    /// Query maximum motor duty
+    ///
+    /// Accepts values between 255 and 1023
+    /// Only used when motion profile is disabled
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HMaximumMotorDuty28MMD29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_maximum_motor_duty(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QMMD")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate("QMMD")?;
+        Ok(value)
+    }
+
     /// Disables power to motor allowing it to be back driven
     ///
     /// # Arguments
@@ -914,6 +953,19 @@ mod tests {
         "*5QAD30\r",
         driver.query_angular_deceleration(5).await.unwrap(),
         30
+    );
+
+    test_command!(
+        test_maximum_motor_duty,
+        "#5MMD512\r",
+        driver.set_maximum_motor_duty(5, 512).await.unwrap()
+    );
+    test_query!(
+        test_query_maximum_motor_duty,
+        "#5QMMD\r",
+        "*5QMMD512\r",
+        driver.query_maximum_motor_duty(5).await.unwrap(),
+        512
     );
 
     // test telemetry queries
