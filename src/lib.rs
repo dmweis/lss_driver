@@ -573,6 +573,47 @@ impl LSSDriver {
         Ok(value)
     }
 
+    /// Set maximum speed in degrees per second
+    ///
+    /// Accepts values up to 180.0
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HMaximumSpeedinDegrees28SD29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `maximum_speed` - value for maximum speed
+    pub async fn set_maximum_speed(
+        &mut self,
+        id: u8,
+        maximum_speed: f32,
+    ) -> Result<(), Box<dyn Error>> {
+        self.driver
+            .send(LssCommand::with_param(
+                id,
+                "SD",
+                (maximum_speed * 10.) as i32,
+            ))
+            .await?;
+        Ok(())
+    }
+
+    /// Query maximum speed in degrees per second
+    ///
+    /// Accepts values up to 180.0
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HMaximumSpeedinDegrees28SD29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    pub async fn query_maximum_speed(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+        self.driver.send(LssCommand::simple(id, "QSD")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate("QSD")?;
+        Ok(value as f32 / 10.)
+    }
+
     /// Disables power to motor allowing it to be back driven
     ///
     /// # Arguments
@@ -966,6 +1007,19 @@ mod tests {
         "*5QMMD512\r",
         driver.query_maximum_motor_duty(5).await.unwrap(),
         512
+    );
+
+    test_command!(
+        test_maximum_speed,
+        "#5SD1800\r",
+        driver.set_maximum_speed(5, 180.).await.unwrap()
+    );
+    test_query!(
+        test_query_maximum_speed,
+        "#5QSD\r",
+        "*5QSD1800\r",
+        driver.query_maximum_speed(5).await.unwrap(),
+        180.
     );
 
     // test telemetry queries
