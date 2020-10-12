@@ -795,8 +795,8 @@ mod tests {
                     expected_send: vec![$expected.to_owned()],
                     receive: vec![],
                 };
-                let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
-                $command;
+                let driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
+                $command(driver).await;
             }
         };
     }
@@ -809,8 +809,8 @@ mod tests {
                     expected_send: vec![$expected.to_owned()],
                     receive: vec![$recv.to_owned()],
                 };
-                let mut driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
-                let res = $command;
+                let driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
+                let res = $command(driver).await;
                 assert_eq!(res, $val);
             }
         };
@@ -819,35 +819,35 @@ mod tests {
     test_command!(
         test_hold_command,
         "#4H\r",
-        driver.halt_hold(4).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.halt_hold(4_u8).await.unwrap() }
     );
     test_query!(
         test_query_id,
         "#254QID\r",
         "*QID5\r",
-        driver.query_id(BROADCAST_ID).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_id(BROADCAST_ID).await.unwrap() },
         5
     );
-    test_command!(test_set_id, "#1CID2\r", driver.set_id(1, 2).await.unwrap());
+    test_command!(test_set_id, "#1CID2\r", |mut driver: LSSDriver| async move { driver.set_id(1, 2).await.unwrap() });
 
     // Motion
     test_command!(
         test_move_to,
         "#1D200\r",
-        driver.move_to_position(1, 20.0).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.move_to_position(1, 20.0).await.unwrap() }
     );
     test_query!(
         test_query_current_position,
         "#5QD\r",
         "*5QD132\r",
-        driver.query_position(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_position(5).await.unwrap() },
         13.2
     );
     test_query!(
         test_query_target_position,
         "#5QDT\r",
         "*5QDT6783\r",
-        driver.query_target_position(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_target_position(5).await.unwrap() },
         678.3
     );
 
@@ -855,13 +855,13 @@ mod tests {
     test_command!(
         test_set_rotation_speed_degrees,
         "#5WD90\r",
-        driver.set_rotation_speed(5, 90.0).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_rotation_speed(5, 90.0).await.unwrap() }
     );
     test_query!(
         test_query_rotation_speed_degrees,
         "#5QWD\r",
         "*5QWD90\r",
-        driver.query_rotation_speed(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_rotation_speed(5).await.unwrap() },
         90.0
     );
 
@@ -870,38 +870,38 @@ mod tests {
         test_unknown_status,
         "#5Q\r",
         "*5Q0\r",
-        driver.query_status(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_status(5).await.unwrap() },
         MotorStatus::Unknown
     );
     test_query!(
         test_holding_status,
         "#5Q\r",
         "*5Q6\r",
-        driver.query_status(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_status(5).await.unwrap() },
         MotorStatus::Holding
     );
     test_query!(
         test_safety_status,
         "#5Q1\r",
         "*5Q3\r",
-        driver.query_safety_status(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_safety_status(5).await.unwrap() },
         SafeModeStatus::TemperatureLimit
     );
 
-    test_command!(test_limp, "#5L\r", driver.limp(5).await.unwrap());
-    test_command!(test_halt_hold, "#5H\r", driver.halt_hold(5).await.unwrap());
+    test_command!(test_limp, "#5L\r", |mut driver: LSSDriver| async move { driver.limp(5).await.unwrap() });
+    test_command!(test_halt_hold, "#5H\r", |mut driver: LSSDriver| async move { driver.halt_hold(5).await.unwrap() });
 
     // LED
     test_command!(
         test_set_led,
         "#5LED3\r",
-        driver.set_color(5, LedColor::Blue).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_color(5, LedColor::Blue).await.unwrap() }
     );
     test_query!(
         test_query_led,
         "#5QLED\r",
         "*5QLED5\r",
-        driver.query_color(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_color(5).await.unwrap() },
         LedColor::Cyan
     );
 
@@ -909,116 +909,116 @@ mod tests {
     test_command!(
         test_motion_profile_on,
         "#5EM1\r",
-        driver.set_motion_profile(5, true).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_motion_profile(5, true).await.unwrap() }
     );
     test_command!(
         test_motion_profile_off,
         "#5EM0\r",
-        driver.set_motion_profile(5, false).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_motion_profile(5, false).await.unwrap() }
     );
     test_query!(
         test_query_motion_profile_on,
         "#5QEM\r",
         "*5QEM1\r",
-        driver.query_motion_profile(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_motion_profile(5).await.unwrap() },
         true
     );
     test_query!(
         test_query_motion_profile_off,
         "#5QEM\r",
         "*5QEM0\r",
-        driver.query_motion_profile(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_motion_profile(5).await.unwrap() },
         false
     );
 
     test_command!(
         test_set_filter_position_count,
         "#5FPC10\r",
-        driver.set_filter_position_count(5, 10).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_filter_position_count(5, 10).await.unwrap() }
     );
     test_query!(
         test_query_filter_position_count,
         "#5QFPC\r",
         "*5QFPC10\r",
-        driver.query_filter_position_count(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_filter_position_count(5).await.unwrap() },
         10
     );
 
     test_command!(
         test_set_angular_stiffness,
         "#5AS-2\r",
-        driver.set_angular_stiffness(5, -2).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_angular_stiffness(5, -2).await.unwrap() }
     );
     test_query!(
         test_query_angular_stiffness,
         "#5QAS\r",
         "*5QAS-2\r",
-        driver.query_angular_stiffness(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_angular_stiffness(5).await.unwrap() },
         -2
     );
 
     test_command!(
         test_set_angular_holding_stiffness,
         "#5AH3\r",
-        driver.set_angular_holding_stiffness(5, 3).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_angular_holding_stiffness(5, 3).await.unwrap() }
     );
     test_query!(
         test_query_angular_holding_stiffness,
         "#5QAH\r",
         "*5QAH3\r",
-        driver.query_angular_holding_stiffness(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_angular_holding_stiffness(5).await.unwrap() },
         3
     );
 
     test_command!(
         test_set_angular_acceleration,
         "#5AA30\r",
-        driver.set_angular_acceleration(5, 30).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_angular_acceleration(5, 30).await.unwrap() }
     );
     test_query!(
         test_query_angular_acceleration,
         "#5QAA\r",
         "*5QAA30\r",
-        driver.query_angular_acceleration(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_angular_acceleration(5).await.unwrap() },
         30
     );
 
     test_command!(
         test_set_angular_deceleration,
         "#5AD30\r",
-        driver.set_angular_deceleration(5, 30).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_angular_deceleration(5, 30).await.unwrap() }
     );
     test_query!(
         test_query_angular_deceleration,
         "#5QAD\r",
         "*5QAD30\r",
-        driver.query_angular_deceleration(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_angular_deceleration(5).await.unwrap() },
         30
     );
 
     test_command!(
         test_maximum_motor_duty,
         "#5MMD512\r",
-        driver.set_maximum_motor_duty(5, 512).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_maximum_motor_duty(5, 512).await.unwrap() }
     );
     test_query!(
         test_query_maximum_motor_duty,
         "#5QMMD\r",
         "*5QMMD512\r",
-        driver.query_maximum_motor_duty(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_maximum_motor_duty(5).await.unwrap() },
         512
     );
 
     test_command!(
         test_maximum_speed,
         "#5SD1800\r",
-        driver.set_maximum_speed(5, 180.).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.set_maximum_speed(5, 180.).await.unwrap() }
     );
     test_query!(
         test_query_maximum_speed,
         "#5QSD\r",
         "*5QSD1800\r",
-        driver.query_maximum_speed(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_maximum_speed(5).await.unwrap() },
         180.
     );
 
@@ -1027,21 +1027,21 @@ mod tests {
         test_query_voltage,
         "#5QV\r",
         "*5QV11200\r",
-        driver.query_voltage(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_voltage(5).await.unwrap() },
         11.2
     );
     test_query!(
         test_query_temperature,
         "#5QT\r",
         "*5QT564\r",
-        driver.query_temperature(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_temperature(5).await.unwrap() },
         56.4
     );
     test_query!(
         test_query_current,
         "#5QC\r",
         "*5QC140\r",
-        driver.query_current(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_current(5).await.unwrap() },
         0.14
     );
 
@@ -1049,21 +1049,21 @@ mod tests {
         test_query_model_string,
         "#5QMS\r",
         "*5QMSLSS-HS1\r",
-        driver.query_model(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_model(5).await.unwrap() },
         Model::HS1
     );
     test_query!(
         test_query_firmware_version,
         "#5QF\r",
         "*5QF368\r",
-        driver.query_firmware_version(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_firmware_version(5).await.unwrap() },
         "368".to_owned()
     );
     test_query!(
         test_query_serial_number,
         "#5QN\r",
         "*5QN12345678\r",
-        driver.query_serial_number(5).await.unwrap(),
+        |mut driver: LSSDriver| async move { driver.query_serial_number(5).await.unwrap() },
         "12345678".to_owned()
     );
 
@@ -1071,58 +1071,58 @@ mod tests {
     test_command!(
         test_blinking_mode_1,
         "#5CLB0\r",
-        driver
+        |mut driver: LSSDriver| async move { driver
             .set_led_blinking(5, vec![LedBlinking::NoBlinking])
             .await
-            .unwrap()
+            .unwrap() }
     );
     test_command!(
         test_blinking_mode_2,
         "#5CLB1\r",
-        driver
+        |mut driver: LSSDriver| async move { driver
             .set_led_blinking(5, vec![LedBlinking::Limp])
             .await
-            .unwrap()
+            .unwrap() }
     );
     test_command!(
         test_blinking_mode_3,
         "#5CLB2\r",
-        driver
+        |mut driver: LSSDriver| async move { driver
             .set_led_blinking(5, vec![LedBlinking::Holding])
             .await
-            .unwrap()
+            .unwrap() }
     );
     test_command!(
         test_blinking_mode_4,
         "#5CLB12\r",
-        driver
+        |mut driver: LSSDriver| async move { driver
             .set_led_blinking(
                 5,
                 vec![LedBlinking::Accelerating, LedBlinking::Decelerating]
             )
             .await
-            .unwrap()
+            .unwrap() }
     );
     test_command!(
         test_blinking_mode_5,
         "#5CLB48\r",
-        driver
+        |mut driver: LSSDriver| async move { driver
             .set_led_blinking(5, vec![LedBlinking::Free, LedBlinking::Travelling])
             .await
-            .unwrap()
+            .unwrap() }
     );
     test_command!(
         test_blinking_mode_6,
         "#5CLB63\r",
-        driver
+        |mut driver: LSSDriver| async move { driver
             .set_led_blinking(5, vec![LedBlinking::AlwaysBlink])
             .await
-            .unwrap()
+            .unwrap() }
     );
 
     test_command!(
         test_reset,
         "#254RESET\r",
-        driver.reset(BROADCAST_ID).await.unwrap()
+        |mut driver: LSSDriver| async move { driver.reset(BROADCAST_ID).await.unwrap() }
     );
 }
