@@ -1,27 +1,12 @@
-use std::{error::Error, str};
+use std::str;
+use thiserror::Error;
 
-/// Error triggered if we fail parsing incoming packet into a data structure
-#[derive(Debug)]
-pub struct PacketParsingError {
-    message: String,
-}
-
-impl PacketParsingError {
-    pub(crate) fn new(message: String) -> Box<dyn Error> {
-        Box::new(PacketParsingError { message })
-    }
-}
-
-impl std::fmt::Display for PacketParsingError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Failed parsing incoming packet")
-    }
-}
-
-impl Error for PacketParsingError {
-    fn source(&self) -> Option<&(dyn Error + 'static)> {
-        None
-    }
+/// Driver errors
+#[derive(Error, Debug)]
+pub enum LssDriverError {
+    #[error("Failed to parse data")]
+    /// Error triggered if we fail parsing incoming packet into a data structure
+    PacketParsingError(String)
 }
 
 /// Colors for the LED on the servo
@@ -39,7 +24,7 @@ pub enum LedColor {
 }
 
 impl LedColor {
-    pub(crate) fn from_i32(number: i32) -> Result<LedColor, Box<dyn Error>> {
+    pub(crate) fn from_i32(number: i32) -> Result<LedColor, LssDriverError> {
         match number {
             0 => Ok(LedColor::Off),
             1 => Ok(LedColor::Red),
@@ -49,7 +34,7 @@ impl LedColor {
             5 => Ok(LedColor::Cyan),
             6 => Ok(LedColor::Magenta),
             7 => Ok(LedColor::White),
-            value => Err(PacketParsingError::new(format!(
+            value => Err(LssDriverError::PacketParsingError(format!(
                 "Failed parsing LedColor from {}",
                 value
             ))),
@@ -76,7 +61,7 @@ pub enum MotorStatus {
 }
 
 impl MotorStatus {
-    pub(crate) fn from_i32(number: i32) -> Result<MotorStatus, Box<dyn Error>> {
+    pub(crate) fn from_i32(number: i32) -> Result<MotorStatus, LssDriverError> {
         match number {
             0 => Ok(MotorStatus::Unknown),
             1 => Ok(MotorStatus::Limp),
@@ -89,7 +74,7 @@ impl MotorStatus {
             8 => Ok(MotorStatus::Stuck),
             9 => Ok(MotorStatus::Blocked),
             10 => Ok(MotorStatus::SafeMode),
-            value => Err(PacketParsingError::new(format!(
+            value => Err(LssDriverError::PacketParsingError(format!(
                 "Failed parsing MotorStatus from {}",
                 value
             ))),
@@ -113,13 +98,13 @@ pub enum SafeModeStatus {
 }
 
 impl SafeModeStatus {
-    pub(crate) fn from_i32(number: i32) -> Result<SafeModeStatus, Box<dyn Error>> {
+    pub(crate) fn from_i32(number: i32) -> Result<SafeModeStatus, LssDriverError> {
         match number {
             0 => Ok(SafeModeStatus::NoLimits),
             1 => Ok(SafeModeStatus::CurrentLimit),
             2 => Ok(SafeModeStatus::InputVoltageOutOfRange),
             3 => Ok(SafeModeStatus::TemperatureLimit),
-            value => Err(PacketParsingError::new(format!(
+            value => Err(LssDriverError::PacketParsingError(format!(
                 "Failed parsing SafeModeStatus from {}",
                 value
             ))),
