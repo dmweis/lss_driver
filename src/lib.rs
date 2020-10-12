@@ -70,7 +70,7 @@ pub const BROADCAST_ID: u8 = 254;
 
 /// Driver for the LSS servo
 pub struct LSSDriver {
-    driver: Box<dyn FramedDriver>,
+    driver: Box<dyn FramedDriver + Send + Sync>,
 }
 
 impl LSSDriver {
@@ -118,7 +118,7 @@ impl LSSDriver {
     /// Creates new LSS driver with a custom implementation of the transport
     ///
     /// This is used for tests and can be used if you want to reimplement the driver over network
-    pub fn with_driver(driver: Box<dyn FramedDriver>) -> LSSDriver {
+    pub fn with_driver(driver: Box<dyn FramedDriver + Send + Sync>) -> LSSDriver {
         LSSDriver { driver }
     }
 
