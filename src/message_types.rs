@@ -6,7 +6,7 @@ use thiserror::Error;
 pub enum LssDriverError {
     #[error("Failed to parse data")]
     /// Error triggered if we fail parsing incoming packet into a data structure
-    PacketParsingError(String)
+    PacketParsingError(String),
 }
 
 /// Colors for the LED on the servo
