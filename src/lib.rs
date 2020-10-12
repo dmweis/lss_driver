@@ -828,7 +828,11 @@ mod tests {
         |mut driver: LSSDriver| async move { driver.query_id(BROADCAST_ID).await.unwrap() },
         5
     );
-    test_command!(test_set_id, "#1CID2\r", |mut driver: LSSDriver| async move { driver.set_id(1, 2).await.unwrap() });
+    test_command!(
+        test_set_id,
+        "#1CID2\r",
+        |mut driver: LSSDriver| async move { driver.set_id(1, 2).await.unwrap() }
+    );
 
     // Motion
     test_command!(
@@ -888,8 +892,14 @@ mod tests {
         SafeModeStatus::TemperatureLimit
     );
 
-    test_command!(test_limp, "#5L\r", |mut driver: LSSDriver| async move { driver.limp(5).await.unwrap() });
-    test_command!(test_halt_hold, "#5H\r", |mut driver: LSSDriver| async move { driver.halt_hold(5).await.unwrap() });
+    test_command!(test_limp, "#5L\r", |mut driver: LSSDriver| async move {
+        driver.limp(5).await.unwrap()
+    });
+    test_command!(
+        test_halt_hold,
+        "#5H\r",
+        |mut driver: LSSDriver| async move { driver.halt_hold(5).await.unwrap() }
+    );
 
     // LED
     test_command!(
@@ -1071,53 +1081,65 @@ mod tests {
     test_command!(
         test_blinking_mode_1,
         "#5CLB0\r",
-        |mut driver: LSSDriver| async move { driver
-            .set_led_blinking(5, vec![LedBlinking::NoBlinking])
-            .await
-            .unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_led_blinking(5, vec![LedBlinking::NoBlinking])
+                .await
+                .unwrap()
+        }
     );
     test_command!(
         test_blinking_mode_2,
         "#5CLB1\r",
-        |mut driver: LSSDriver| async move { driver
-            .set_led_blinking(5, vec![LedBlinking::Limp])
-            .await
-            .unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_led_blinking(5, vec![LedBlinking::Limp])
+                .await
+                .unwrap()
+        }
     );
     test_command!(
         test_blinking_mode_3,
         "#5CLB2\r",
-        |mut driver: LSSDriver| async move { driver
-            .set_led_blinking(5, vec![LedBlinking::Holding])
-            .await
-            .unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_led_blinking(5, vec![LedBlinking::Holding])
+                .await
+                .unwrap()
+        }
     );
     test_command!(
         test_blinking_mode_4,
         "#5CLB12\r",
-        |mut driver: LSSDriver| async move { driver
-            .set_led_blinking(
-                5,
-                vec![LedBlinking::Accelerating, LedBlinking::Decelerating]
-            )
-            .await
-            .unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_led_blinking(
+                    5,
+                    vec![LedBlinking::Accelerating, LedBlinking::Decelerating],
+                )
+                .await
+                .unwrap()
+        }
     );
     test_command!(
         test_blinking_mode_5,
         "#5CLB48\r",
-        |mut driver: LSSDriver| async move { driver
-            .set_led_blinking(5, vec![LedBlinking::Free, LedBlinking::Travelling])
-            .await
-            .unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_led_blinking(5, vec![LedBlinking::Free, LedBlinking::Travelling])
+                .await
+                .unwrap()
+        }
     );
     test_command!(
         test_blinking_mode_6,
         "#5CLB63\r",
-        |mut driver: LSSDriver| async move { driver
-            .set_led_blinking(5, vec![LedBlinking::AlwaysBlink])
-            .await
-            .unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_led_blinking(5, vec![LedBlinking::AlwaysBlink])
+                .await
+                .unwrap()
+        }
     );
 
     test_command!(
