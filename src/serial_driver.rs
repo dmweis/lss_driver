@@ -1,9 +1,12 @@
+use crate::message_types::LssDriverError;
 use async_trait::async_trait;
 use bytes::{BufMut, BytesMut};
 use futures::{SinkExt, StreamExt};
-use std::{error::Error, io, str};
+use std::{io, str};
 use tokio::time::{timeout, Duration};
 use tokio_util::codec::{Decoder, Encoder};
+
+type DriverResult<T> = Result<T, LssDriverError>;
 
 #[derive(PartialEq, Clone, Debug)]
 pub struct LssCommand {
@@ -42,19 +45,41 @@ impl LssResponse {
         LssResponse { message }
     }
 
-    pub fn separate(&self, separator: &str) -> Result<(u8, i32), Box<dyn Error>> {
+    pub fn separate(&self, separator: &str) -> DriverResult<(u8, i32)> {
         let len = self.message.len();
         let mut split = self.message[1..len - 1].split(separator);
-        let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
-        let value: i32 = split.next().ok_or("Failed to extract value")?.parse()?;
+        let id: u8 = split
+            .next()
+            .ok_or(LssDriverError::PacketParsingError(String::from(
+                "Failed to extract id",
+            )))?
+            .parse()
+            .map_err(|_| LssDriverError::PacketParsingError(String::from("Failed parsing id")))?;
+        let value: i32 = split
+            .next()
+            .ok_or(LssDriverError::PacketParsingError(
+                "Failed to extract value".to_owned(),
+            ))?
+            .parse()
+            .map_err(|_| {
+                LssDriverError::PacketParsingError(String::from("Failed parsing value"))
+            })?;
         Ok((id, value))
     }
 
-    pub fn separate_string(&self, separator: &str) -> Result<(u8, String), Box<dyn Error>> {
+    pub fn separate_string(&self, separator: &str) -> DriverResult<(u8, String)> {
         let len = self.message.len();
         let mut split = self.message[1..len - 1].split(separator);
-        let id: u8 = split.next().ok_or("Failed to extract id")?.parse()?;
-        let value = split.next().ok_or("Failed to extract value")?;
+        let id: u8 = split
+            .next()
+            .ok_or(LssDriverError::PacketParsingError(String::from(
+                "Failed to extract id",
+            )))?
+            .parse()
+            .map_err(|_| LssDriverError::PacketParsingError(String::from("Failed parsing id")))?;
+        let value = split.next().ok_or(LssDriverError::PacketParsingError(
+            "Failed to extract value".to_owned(),
+        ))?;
         Ok((id, value.to_owned()))
     }
 
@@ -62,10 +87,16 @@ impl LssResponse {
     /// This is useful for queries that don't return ID
     ///
     /// Such as QID
-    pub fn get_val(&self, separator: &str) -> Result<i32, Box<dyn Error>> {
+    pub fn get_val(&self, separator: &str) -> DriverResult<i32> {
         let len = self.message.len();
         let split = self.message[1..len - 1].split(separator);
-        let value: i32 = split.last().ok_or("Failed to extract value")?.parse()?;
+        let value: i32 = split
+            .last()
+            .ok_or(LssDriverError::PacketParsingError(
+                "failed to extract value".to_owned(),
+            ))?
+            .parse()
+            .map_err(|_| LssDriverError::PacketParsingError("failed to parse int".to_owned()))?;
         Ok(value)
     }
 }
@@ -102,8 +133,8 @@ impl Encoder<LssCommand> for LssCodec {
 
 #[async_trait]
 pub trait FramedDriver {
-    async fn send(&mut self, command: LssCommand) -> Result<(), Box<dyn Error>>;
-    async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>>;
+    async fn send(&mut self, command: LssCommand) -> DriverResult<()>;
+    async fn receive(&mut self) -> DriverResult<LssResponse>;
 }
 
 const TIMEOUT: u64 = 10;
@@ -113,24 +144,23 @@ pub struct FramedSerialDriver {
 }
 
 impl FramedSerialDriver {
-    pub fn new(port: &str) -> Result<FramedSerialDriver, Box<dyn Error>> {
+    pub fn new(port: &str) -> DriverResult<FramedSerialDriver> {
         let mut settings = tokio_serial::SerialPortSettings::default();
         settings.baud_rate = 115200;
         settings.timeout = std::time::Duration::from_millis(TIMEOUT);
-        let serial_port = tokio_serial::Serial::from_path(port, &settings)?;
+        let serial_port = tokio_serial::Serial::from_path(port, &settings)
+            .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
             framed_port: LssCodec.framed(serial_port),
         })
     }
 
-    pub fn with_baud_rate(
-        port: &str,
-        baud_rate: u32,
-    ) -> Result<FramedSerialDriver, Box<dyn Error>> {
+    pub fn with_baud_rate(port: &str, baud_rate: u32) -> DriverResult<FramedSerialDriver> {
         let mut settings = tokio_serial::SerialPortSettings::default();
         settings.baud_rate = baud_rate;
         settings.timeout = std::time::Duration::from_millis(TIMEOUT);
-        let serial_port = tokio_serial::Serial::from_path(port, &settings)?;
+        let serial_port = tokio_serial::Serial::from_path(port, &settings)
+            .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
             framed_port: LssCodec.framed(serial_port),
         })
@@ -139,15 +169,22 @@ impl FramedSerialDriver {
 
 #[async_trait]
 impl FramedDriver for FramedSerialDriver {
-    async fn send(&mut self, command: LssCommand) -> Result<(), Box<dyn Error>> {
-        self.framed_port.send(command).await?;
+    async fn send(&mut self, command: LssCommand) -> DriverResult<()> {
+        self.framed_port
+            .send(command)
+            .await
+            .map_err(|_| LssDriverError::SendingError)?;
         Ok(())
     }
 
-    async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>> {
+    async fn receive(&mut self) -> DriverResult<LssResponse> {
         let response = timeout(Duration::from_millis(TIMEOUT), self.framed_port.next())
-            .await?
-            .ok_or("Failed receive message")??;
+            .await
+            .map_err(|_| LssDriverError::TimeoutError)?
+            .ok_or(LssDriverError::PacketParsingError(
+                "Failed to extract message".to_owned(),
+            ))?
+            .map_err(|_| LssDriverError::PacketParsingError("Unknown error".to_owned()))?;
         Ok(response)
     }
 }

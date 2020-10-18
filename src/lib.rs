@@ -63,10 +63,12 @@ mod serial_driver;
 
 pub use message_types::*;
 use serial_driver::{FramedDriver, FramedSerialDriver, LssCommand};
-use std::{error::Error, str};
+use std::str;
 
 /// ID used to talk to all motors on a bus at once
 pub const BROADCAST_ID: u8 = 254;
+
+type DriverResult<T> = Result<T, LssDriverError>;
 
 /// Driver for the LSS servo
 pub struct LSSDriver {
@@ -88,7 +90,7 @@ impl LSSDriver {
     /// use lss_driver::LSSDriver;
     /// let mut driver = LSSDriver::new("COM1").unwrap();
     /// ```
-    pub fn new(port: &str) -> Result<LSSDriver, Box<dyn Error>> {
+    pub fn new(port: &str) -> DriverResult<LSSDriver> {
         let driver = FramedSerialDriver::new(port)?;
         Ok(LSSDriver {
             driver: Box::new(driver),
@@ -108,7 +110,7 @@ impl LSSDriver {
     /// use lss_driver::LSSDriver;
     /// let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
     /// ```
-    pub fn with_baud_rate(port: &str, baud_rate: u32) -> Result<LSSDriver, Box<dyn Error>> {
+    pub fn with_baud_rate(port: &str, baud_rate: u32) -> DriverResult<LSSDriver> {
         let driver = FramedSerialDriver::with_baud_rate(port, baud_rate)?;
         Ok(LSSDriver {
             driver: Box::new(driver),
@@ -130,7 +132,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to reset
-    pub async fn reset(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
+    pub async fn reset(&mut self, id: u8) -> DriverResult<()> {
         self.driver.send(LssCommand::simple(id, "RESET")).await?;
         Ok(())
     }
@@ -153,7 +155,7 @@ impl LSSDriver {
     ///     let id = driver.query_id(lss_driver::BROADCAST_ID).await.unwrap();
     /// }
     /// ```
-    pub async fn query_id(&mut self, id: u8) -> Result<u8, Box<dyn Error>> {
+    pub async fn query_id(&mut self, id: u8) -> DriverResult<u8> {
         self.driver.send(LssCommand::simple(id, "QID")).await?;
         let response = self.driver.receive().await?;
         let value = response.get_val("QID")?;
@@ -170,7 +172,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `new_id` - ID You want that servo to have
-    pub async fn set_id(&mut self, id: u8, new_id: u8) -> Result<(), Box<dyn Error>> {
+    pub async fn set_id(&mut self, id: u8, new_id: u8) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "CID", new_id as i32))
             .await?;
@@ -183,7 +185,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `color` - Color to set
-    pub async fn set_color(&mut self, id: u8, color: LedColor) -> Result<(), Box<dyn Error>> {
+    pub async fn set_color(&mut self, id: u8, color: LedColor) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "LED", color as i32))
             .await?;
@@ -195,7 +197,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_color(&mut self, id: u8) -> Result<LedColor, Box<dyn Error>> {
+    pub async fn query_color(&mut self, id: u8) -> DriverResult<LedColor> {
         self.driver.send(LssCommand::simple(id, "QLED")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QLED")?;
@@ -221,7 +223,7 @@ impl LSSDriver {
     ///     driver.move_to_position(5, 480.0).await;
     /// }
     /// ```
-    pub async fn move_to_position(&mut self, id: u8, position: f32) -> Result<(), Box<dyn Error>> {
+    pub async fn move_to_position(&mut self, id: u8, position: f32) -> DriverResult<()> {
         let angle = (position * 10.0).round() as i32;
         self.driver
             .send(LssCommand::with_param(id, "D", angle))
@@ -236,7 +238,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_position(&mut self, id: u8) -> DriverResult<f32> {
         self.driver.send(LssCommand::simple(id, "QD")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QD")?;
@@ -250,7 +252,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_target_position(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_target_position(&mut self, id: u8) -> DriverResult<f32> {
         self.driver.send(LssCommand::simple(id, "QDT")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QDT")?;
@@ -263,7 +265,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `speed` - Speed in °/s
-    pub async fn set_rotation_speed(&mut self, id: u8, speed: f32) -> Result<(), Box<dyn Error>> {
+    pub async fn set_rotation_speed(&mut self, id: u8, speed: f32) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "WD", speed as i32))
             .await?;
@@ -275,7 +277,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_rotation_speed(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_rotation_speed(&mut self, id: u8) -> DriverResult<f32> {
         self.driver.send(LssCommand::simple(id, "QWD")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QWD")?;
@@ -289,7 +291,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_status(&mut self, id: u8) -> Result<MotorStatus, Box<dyn Error>> {
+    pub async fn query_status(&mut self, id: u8) -> DriverResult<MotorStatus> {
         self.driver.send(LssCommand::simple(id, "Q")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("Q")?;
@@ -303,7 +305,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_safety_status(&mut self, id: u8) -> Result<SafeModeStatus, Box<dyn Error>> {
+    pub async fn query_safety_status(&mut self, id: u8) -> DriverResult<SafeModeStatus> {
         self.driver.send(LssCommand::simple(id, "Q1")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("Q")?;
@@ -320,11 +322,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `motion_profile` - set motion profile on/off
-    pub async fn set_motion_profile(
-        &mut self,
-        id: u8,
-        motion_profile: bool,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_motion_profile(&mut self, id: u8, motion_profile: bool) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "EM", motion_profile as i32))
             .await?;
@@ -340,7 +338,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_motion_profile(&mut self, id: u8) -> Result<bool, Box<dyn Error>> {
+    pub async fn query_motion_profile(&mut self, id: u8) -> DriverResult<bool> {
         self.driver.send(LssCommand::simple(id, "QEM")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QEM")?;
@@ -362,7 +360,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         filter_position_count: u8,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(
                 id,
@@ -383,7 +381,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_filter_position_count(&mut self, id: u8) -> Result<u8, Box<dyn Error>> {
+    pub async fn query_filter_position_count(&mut self, id: u8) -> DriverResult<u8> {
         self.driver.send(LssCommand::simple(id, "QFPC")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QFPC")?;
@@ -402,7 +400,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         angular_stiffness: i32,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "AS", angular_stiffness))
             .await?;
@@ -416,7 +414,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_angular_stiffness(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_stiffness(&mut self, id: u8) -> DriverResult<i32> {
         self.driver.send(LssCommand::simple(id, "QAS")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QAS")?;
@@ -435,7 +433,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         angular_holding: i32,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "AH", angular_holding))
             .await?;
@@ -449,7 +447,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    pub async fn query_angular_holding_stiffness(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_holding_stiffness(&mut self, id: u8) -> DriverResult<i32> {
         self.driver.send(LssCommand::simple(id, "QAH")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QAH")?;
@@ -471,7 +469,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         angular_acceleration: i32,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "AA", angular_acceleration))
             .await?;
@@ -488,7 +486,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_angular_acceleration(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_acceleration(&mut self, id: u8) -> DriverResult<i32> {
         self.driver.send(LssCommand::simple(id, "QAA")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QAA")?;
@@ -510,7 +508,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         angular_deceleration: i32,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "AD", angular_deceleration))
             .await?;
@@ -527,7 +525,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_angular_deceleration(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_angular_deceleration(&mut self, id: u8) -> DriverResult<i32> {
         self.driver.send(LssCommand::simple(id, "QAD")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QAD")?;
@@ -549,7 +547,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         maximum_motor_duty: i32,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(id, "MMD", maximum_motor_duty))
             .await?;
@@ -566,7 +564,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_maximum_motor_duty(&mut self, id: u8) -> Result<i32, Box<dyn Error>> {
+    pub async fn query_maximum_motor_duty(&mut self, id: u8) -> DriverResult<i32> {
         self.driver.send(LssCommand::simple(id, "QMMD")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QMMD")?;
@@ -583,11 +581,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of servo you want to control
     /// * `maximum_speed` - value for maximum speed
-    pub async fn set_maximum_speed(
-        &mut self,
-        id: u8,
-        maximum_speed: f32,
-    ) -> Result<(), Box<dyn Error>> {
+    pub async fn set_maximum_speed(&mut self, id: u8, maximum_speed: f32) -> DriverResult<()> {
         self.driver
             .send(LssCommand::with_param(
                 id,
@@ -607,7 +601,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_maximum_speed(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_maximum_speed(&mut self, id: u8) -> DriverResult<f32> {
         self.driver.send(LssCommand::simple(id, "QSD")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QSD")?;
@@ -619,7 +613,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    pub async fn limp(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
+    pub async fn limp(&mut self, id: u8) -> DriverResult<()> {
         self.driver.send(LssCommand::simple(id, "L")).await?;
         Ok(())
     }
@@ -629,7 +623,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to control
-    pub async fn halt_hold(&mut self, id: u8) -> Result<(), Box<dyn Error>> {
+    pub async fn halt_hold(&mut self, id: u8) -> DriverResult<()> {
         self.driver.send(LssCommand::simple(id, "H")).await?;
         Ok(())
     }
@@ -639,7 +633,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to Query
-    pub async fn query_voltage(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_voltage(&mut self, id: u8) -> DriverResult<f32> {
         // response message looks like *5QV11200<cr>
         // Response is in mV
         self.driver.send(LssCommand::simple(id, "QV")).await?;
@@ -653,7 +647,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to Query
-    pub async fn query_temperature(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_temperature(&mut self, id: u8) -> DriverResult<f32> {
         // response message looks like *5QT441<cr>
         // Response is in 10s of celsius
         // 441 would be 44.1 celsius
@@ -668,7 +662,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to Query
-    pub async fn query_current(&mut self, id: u8) -> Result<f32, Box<dyn Error>> {
+    pub async fn query_current(&mut self, id: u8) -> DriverResult<f32> {
         // response message looks like *5QT441<cr>
         // Response is in mA
         self.driver.send(LssCommand::simple(id, "QC")).await?;
@@ -682,7 +676,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_model(&mut self, id: u8) -> Result<Model, Box<dyn Error>> {
+    pub async fn query_model(&mut self, id: u8) -> DriverResult<Model> {
         self.driver.send(LssCommand::simple(id, "QMS")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate_string("QMS")?;
@@ -694,7 +688,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_firmware_version(&mut self, id: u8) -> Result<String, Box<dyn Error>> {
+    pub async fn query_firmware_version(&mut self, id: u8) -> DriverResult<String> {
         self.driver.send(LssCommand::simple(id, "QF")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate_string("QF")?;
@@ -706,7 +700,7 @@ impl LSSDriver {
     /// # Arguments
     ///
     /// * `id` - ID of servo you want to query
-    pub async fn query_serial_number(&mut self, id: u8) -> Result<String, Box<dyn Error>> {
+    pub async fn query_serial_number(&mut self, id: u8) -> DriverResult<String> {
         self.driver.send(LssCommand::simple(id, "QN")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate_string("QN")?;
@@ -725,7 +719,7 @@ impl LSSDriver {
         &mut self,
         id: u8,
         blinking_mode: Vec<LedBlinking>,
-    ) -> Result<(), Box<dyn Error>> {
+    ) -> DriverResult<()> {
         let sum = blinking_mode
             .iter()
             .map(|item| *item as i32)
@@ -752,13 +746,13 @@ mod tests {
 
     #[async_trait]
     impl FramedDriver for MockedDriver {
-        async fn send(&mut self, command: LssCommand) -> Result<(), Box<dyn Error>> {
+        async fn send(&mut self, command: LssCommand) -> DriverResult<()> {
             let expected = self.expected_send.pop().unwrap();
             assert_eq!(expected, command.as_str().to_owned());
             Ok(())
         }
 
-        async fn receive(&mut self) -> Result<LssResponse, Box<dyn Error>> {
+        async fn receive(&mut self) -> DriverResult<LssResponse> {
             Ok(LssResponse::new(self.receive.pop().unwrap()))
         }
     }

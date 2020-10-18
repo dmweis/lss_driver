@@ -7,6 +7,13 @@ pub enum LssDriverError {
     #[error("Failed to parse data")]
     /// Error triggered if we fail parsing incoming packet into a data structure
     PacketParsingError(String),
+    #[error("Operation timed out")]
+    /// Error triggered for reading timeout
+    TimeoutError,
+    #[error("Failed to open serial port")]
+    FailedOpeningSerialPort,
+    #[error("Failed to open serial port")]
+    SendingError,
 }
 
 /// Colors for the LED on the servo
