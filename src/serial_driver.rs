@@ -50,16 +50,16 @@ impl LssResponse {
         let mut split = self.message[1..len - 1].split(separator);
         let id: u8 = split
             .next()
-            .ok_or(LssDriverError::PacketParsingError(String::from(
-                "Failed to extract id",
-            )))?
+            .ok_or_else(|| {
+                LssDriverError::PacketParsingError(String::from("Failed to extract id"))
+            })?
             .parse()
             .map_err(|_| LssDriverError::PacketParsingError(String::from("Failed parsing id")))?;
         let value: i32 = split
             .next()
-            .ok_or(LssDriverError::PacketParsingError(
-                "Failed to extract value".to_owned(),
-            ))?
+            .ok_or_else(|| {
+                LssDriverError::PacketParsingError("Failed to extract value".to_owned())
+            })?
             .parse()
             .map_err(|_| {
                 LssDriverError::PacketParsingError(String::from("Failed parsing value"))
@@ -72,14 +72,14 @@ impl LssResponse {
         let mut split = self.message[1..len - 1].split(separator);
         let id: u8 = split
             .next()
-            .ok_or(LssDriverError::PacketParsingError(String::from(
-                "Failed to extract id",
-            )))?
+            .ok_or_else(|| {
+                LssDriverError::PacketParsingError(String::from("Failed to extract id"))
+            })?
             .parse()
             .map_err(|_| LssDriverError::PacketParsingError(String::from("Failed parsing id")))?;
-        let value = split.next().ok_or(LssDriverError::PacketParsingError(
-            "Failed to extract value".to_owned(),
-        ))?;
+        let value = split.next().ok_or_else(|| {
+            LssDriverError::PacketParsingError("Failed to extract value".to_owned())
+        })?;
         Ok((id, value.to_owned()))
     }
 
@@ -92,9 +92,9 @@ impl LssResponse {
         let split = self.message[1..len - 1].split(separator);
         let value: i32 = split
             .last()
-            .ok_or(LssDriverError::PacketParsingError(
-                "failed to extract value".to_owned(),
-            ))?
+            .ok_or_else(|| {
+                LssDriverError::PacketParsingError("failed to extract value".to_owned())
+            })?
             .parse()
             .map_err(|_| LssDriverError::PacketParsingError("failed to parse int".to_owned()))?;
         Ok(value)
@@ -181,9 +181,9 @@ impl FramedDriver for FramedSerialDriver {
         let response = timeout(Duration::from_millis(TIMEOUT), self.framed_port.next())
             .await
             .map_err(|_| LssDriverError::TimeoutError)?
-            .ok_or(LssDriverError::PacketParsingError(
-                "Failed to extract message".to_owned(),
-            ))?
+            .ok_or_else(|| {
+                LssDriverError::PacketParsingError("Failed to extract message".to_owned())
+            })?
             .map_err(|_| LssDriverError::PacketParsingError("Unknown error".to_owned()))?;
         Ok(response)
     }
