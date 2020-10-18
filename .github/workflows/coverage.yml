@@ -28,9 +28,9 @@ jobs:
           args: '-- --test-threads 1'
 
       - name: Upload to codecov.io
-      uses: codecov/codecov-action@v1.0.7
-      with:
-        file: ${{ steps.coverage.outputs.report }}
+        uses: codecov/codecov-action@v1.0.7
+        with:
+          file: ${{ steps.coverage.outputs.report }}
 
       - name: Archive code coverage results
         uses: actions/upload-artifact@v1
