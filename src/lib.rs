@@ -738,7 +738,6 @@ mod tests {
     use super::*;
     use approx::assert_relative_eq;
     use async_trait::async_trait;
-    use tokio;
 
     struct MockedDriver {
         expected_send: Vec<String>,
