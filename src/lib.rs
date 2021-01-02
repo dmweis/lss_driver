@@ -784,13 +784,14 @@ mod tests {
     macro_rules! test_command {
         ($name:ident, $expected:expr, $command:expr) => {
             #[tokio::test]
+            #[allow(clippy::redundant_closure_call)]
             async fn $name() {
                 let mocked_framed_driver = MockedDriver {
                     expected_send: vec![$expected.to_owned()],
                     receive: vec![],
                 };
                 let driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
-                $command(driver).await;
+                ($command)(driver).await;
             }
         };
     }
@@ -798,14 +799,31 @@ mod tests {
     macro_rules! test_query {
         ($name:ident, $expected:expr, $recv:expr, $command:expr, $val:expr) => {
             #[tokio::test]
+            #[allow(clippy::redundant_closure_call)]
             async fn $name() {
                 let mocked_framed_driver = MockedDriver {
                     expected_send: vec![$expected.to_owned()],
                     receive: vec![$recv.to_owned()],
                 };
                 let driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
-                let res = $command(driver).await;
+                let res = ($command)(driver).await;
                 assert_eq!(res, $val);
+            }
+        };
+    }
+
+    macro_rules! test_query_float {
+        ($name:ident, $expected:expr, $recv:expr, $command:expr, $val:expr) => {
+            #[tokio::test]
+            #[allow(clippy::redundant_closure_call)]
+            async fn $name() {
+                let mocked_framed_driver = MockedDriver {
+                    expected_send: vec![$expected.to_owned()],
+                    receive: vec![$recv.to_owned()],
+                };
+                let driver = LSSDriver::with_driver(Box::new(mocked_framed_driver));
+                let res = ($command)(driver).await;
+                assert_relative_eq!(res, $val);
             }
         };
     }
@@ -813,8 +831,11 @@ mod tests {
     test_command!(
         test_hold_command,
         "#4H\r",
-        |mut driver: LSSDriver| async move { driver.halt_hold(4_u8).await.unwrap() }
+        |mut driver: LSSDriver| async move {
+            driver.halt_hold(4_u8).await.unwrap();
+        }
     );
+
     test_query!(
         test_query_id,
         "#254QID\r",
@@ -834,14 +855,14 @@ mod tests {
         "#1D200\r",
         |mut driver: LSSDriver| async move { driver.move_to_position(1, 20.0).await.unwrap() }
     );
-    test_query!(
+    test_query_float!(
         test_query_current_position,
         "#5QD\r",
         "*5QD132\r",
         |mut driver: LSSDriver| async move { driver.query_position(5).await.unwrap() },
         13.2
     );
-    test_query!(
+    test_query_float!(
         test_query_target_position,
         "#5QDT\r",
         "*5QDT6783\r",
@@ -855,7 +876,7 @@ mod tests {
         "#5WD90\r",
         |mut driver: LSSDriver| async move { driver.set_rotation_speed(5, 90.0).await.unwrap() }
     );
-    test_query!(
+    test_query_float!(
         test_query_rotation_speed_degrees,
         "#5QWD\r",
         "*5QWD90\r",
@@ -1018,7 +1039,7 @@ mod tests {
         "#5SD1800\r",
         |mut driver: LSSDriver| async move { driver.set_maximum_speed(5, 180.).await.unwrap() }
     );
-    test_query!(
+    test_query_float!(
         test_query_maximum_speed,
         "#5QSD\r",
         "*5QSD1800\r",
@@ -1027,21 +1048,21 @@ mod tests {
     );
 
     // test telemetry queries
-    test_query!(
+    test_query_float!(
         test_query_voltage,
         "#5QV\r",
         "*5QV11200\r",
         |mut driver: LSSDriver| async move { driver.query_voltage(5).await.unwrap() },
         11.2
     );
-    test_query!(
+    test_query_float!(
         test_query_temperature,
         "#5QT\r",
         "*5QT564\r",
         |mut driver: LSSDriver| async move { driver.query_temperature(5).await.unwrap() },
         56.4
     );
-    test_query!(
+    test_query_float!(
         test_query_current,
         "#5QC\r",
         "*5QC140\r",
