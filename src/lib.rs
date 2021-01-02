@@ -736,6 +736,7 @@ impl LSSDriver {
 mod tests {
     use super::serial_driver::LssResponse;
     use super::*;
+    use approx::assert_relative_eq;
     use async_trait::async_trait;
     use tokio;
 
@@ -778,7 +779,7 @@ mod tests {
         driver.move_to_position(3, 180.0).await.unwrap();
         driver.halt_hold(4).await.unwrap();
         let voltage = driver.query_voltage(5).await.unwrap();
-        assert_eq!(voltage, 11.2);
+        assert_relative_eq!(voltage, 11.2);
     }
 
     macro_rules! test_command {
