@@ -231,6 +231,29 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Move to absolute position in degrees
+    ///
+    /// Same as `move_to_position`
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `position` - Absolute position in degrees
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    /// async fn async_main(){
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.set_target_position(5, 180.0).await;
+    ///     driver.set_target_position(5, 480.0).await;
+    /// }
+    /// ```
+    pub async fn set_target_position(&mut self, id: u8, position: f32) -> DriverResult<()> {
+        self.move_to_position(id, position).await
+    }
+
     /// Query absolute current position in degrees
     ///
     /// Supports virtual positions that are more than 360 degrees
@@ -854,6 +877,11 @@ mod tests {
         test_move_to,
         "#1D200\r",
         |mut driver: LSSDriver| async move { driver.move_to_position(1, 20.0).await.unwrap() }
+    );
+    test_command!(
+        test_set_target_position,
+        "#1D200\r",
+        |mut driver: LSSDriver| async move { driver.set_target_position(1, 20.0).await.unwrap() }
     );
     test_query_float!(
         test_query_current_position,
