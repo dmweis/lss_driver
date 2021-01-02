@@ -145,9 +145,11 @@ pub struct FramedSerialDriver {
 
 impl FramedSerialDriver {
     pub fn new(port: &str) -> DriverResult<FramedSerialDriver> {
-        let mut settings = tokio_serial::SerialPortSettings::default();
-        settings.baud_rate = 115200;
-        settings.timeout = std::time::Duration::from_millis(TIMEOUT);
+        let settings = tokio_serial::SerialPortSettings {
+            baud_rate: 115200,
+            timeout: std::time::Duration::from_millis(TIMEOUT),
+            ..Default::default()
+        };
         let serial_port = tokio_serial::Serial::from_path(port, &settings)
             .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
@@ -156,9 +158,11 @@ impl FramedSerialDriver {
     }
 
     pub fn with_baud_rate(port: &str, baud_rate: u32) -> DriverResult<FramedSerialDriver> {
-        let mut settings = tokio_serial::SerialPortSettings::default();
-        settings.baud_rate = baud_rate;
-        settings.timeout = std::time::Duration::from_millis(TIMEOUT);
+        let settings = tokio_serial::SerialPortSettings {
+            baud_rate,
+            timeout: std::time::Duration::from_millis(TIMEOUT),
+            ..Default::default()
+        };
         let serial_port = tokio_serial::Serial::from_path(port, &settings)
             .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
