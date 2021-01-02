@@ -196,7 +196,7 @@ mod tests {
 
     #[test]
     fn framing_returns_none() {
-        let mut payload = BytesMut::from("*5QV11200".as_bytes());
+        let mut payload = BytesMut::from("*5QV11200");
         let mut codec = LssCodec {};
         let res = codec.decode(&mut payload).unwrap();
         assert_eq!(res, None);
@@ -204,7 +204,7 @@ mod tests {
 
     #[test]
     fn framing_returns_twice() {
-        let mut payload = BytesMut::from("*1QV1\r*2QV2\r".as_bytes());
+        let mut payload = BytesMut::from("*1QV1\r*2QV2\r");
         let mut codec = LssCodec {};
         let res = codec.decode(&mut payload).unwrap().unwrap();
         let (id, val) = res.separate("QV").unwrap();
@@ -220,7 +220,7 @@ mod tests {
 
     #[test]
     fn query_voltage_gets_extracted_from_frame() {
-        let mut payload = BytesMut::from("*5QV11200\r".as_bytes());
+        let mut payload = BytesMut::from("*5QV11200\r");
         let mut codec = LssCodec {};
         let res = codec.decode(&mut payload).unwrap().unwrap();
         let (id, val) = res.separate("QV").unwrap();
@@ -251,13 +251,13 @@ mod tests {
     #[test]
     fn simple_command_serializes() {
         let command = LssCommand::simple(1, "QV");
-        assert_eq!(command.as_bytes(), "#1QV\r".as_bytes())
+        assert_eq!(command.as_bytes(), b"#1QV\r")
     }
 
     #[test]
     fn param_command_serializes() {
         let command = LssCommand::with_param(1, "D", 10);
-        assert_eq!(command.as_bytes(), "#1D10\r".as_bytes())
+        assert_eq!(command.as_bytes(), b"#1D10\r")
     }
 
     #[test]
