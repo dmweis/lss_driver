@@ -1,6 +1,5 @@
 use async_std::task::sleep;
 use clap::Clap;
-use lss_driver;
 use std::time::Duration;
 
 #[derive(Clap)]
@@ -16,12 +15,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut driver = lss_driver::LSSDriver::new(&args.port)?;
     let mut ids = vec![];
     for i in 0..254 {
-        match driver.query_status(i).await {
-            Ok(_) => {
-                ids.push(i);
-                println!("Found servo with ID {}", i)
-            }
-            Err(_) => (),
+        if driver.query_status(i).await.is_ok() {
+            ids.push(i);
+            println!("Found servo with ID {}", i)
         }
     }
     for id in &ids {
@@ -29,7 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     loop {
         let mut frame_buffer = String::new();
-        frame_buffer.push_str("\n");
+        frame_buffer.push('\n');
         for id in &ids {
             let position = driver.query_position(*id).await?;
             frame_buffer.push_str(&format!("{} {}\n", id, position));

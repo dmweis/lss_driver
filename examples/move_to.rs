@@ -1,5 +1,4 @@
 use clap::Clap;
-use lss_driver;
 
 #[derive(Clap)]
 #[clap()]

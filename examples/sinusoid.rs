@@ -1,6 +1,5 @@
 use async_std::task::sleep;
 use clap::Clap;
-use lss_driver;
 use std::time::Duration;
 use std::time::Instant;
 

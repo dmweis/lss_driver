@@ -1,8 +1,6 @@
 use async_std::task::sleep;
 // use std::thread::sleep;
 use clap::Clap;
-use ctrlc;
-use lss_driver;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;

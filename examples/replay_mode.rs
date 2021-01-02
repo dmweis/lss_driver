@@ -1,8 +1,6 @@
 use async_std::io;
 use async_std::task::sleep;
 use clap::Clap;
-use ctrlc;
-use lss_driver;
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -38,12 +36,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let mut ids = vec![];
     for i in 0..254 {
-        match driver.query_status(i).await {
-            Ok(_) => {
-                ids.push(i);
-                println!("Found servo with ID {}", i)
-            }
-            Err(_) => (),
+        if driver.query_status(i).await.is_ok() {
+            ids.push(i);
+            println!("Found servo with ID {}", i)
         }
     }
     println!("Finished searching");
