@@ -72,7 +72,7 @@ type DriverResult<T> = Result<T, LssDriverError>;
 
 /// Driver for the LSS servo
 pub struct LSSDriver {
-    driver: Box<dyn FramedDriver + Send>,
+    driver: Box<dyn FramedDriver + Send + Sync>,
 }
 
 impl LSSDriver {
