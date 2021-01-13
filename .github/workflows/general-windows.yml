@@ -7,7 +7,7 @@ env:
 
 jobs:
   test-windows:
-    name: Test-windows
+    name: Test
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
