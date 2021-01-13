@@ -186,7 +186,7 @@ impl FramedSerialDriver {
 impl FramedDriver for FramedSerialDriver {
     async fn send(&mut self, command: LssCommand) -> DriverResult<()> {
         #[cfg(not(target_family = "windows"))]
-        let mut port = self.framed_port;
+        let port = &mut self.framed_port;
         #[cfg(target_family = "windows")]
         let mut port = self.framed_port.lock().await;
         port.send(command)
@@ -197,7 +197,7 @@ impl FramedDriver for FramedSerialDriver {
 
     async fn receive(&mut self) -> DriverResult<LssResponse> {
         #[cfg(not(target_family = "windows"))]
-        let mut port = self.framed_port;
+        let port = &mut self.framed_port;
         #[cfg(target_family = "windows")]
         let mut port = self.framed_port.lock().await;
         let response = timeout(Duration::from_millis(TIMEOUT), port.next())
