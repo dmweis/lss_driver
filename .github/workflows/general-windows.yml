@@ -22,7 +22,7 @@ jobs:
 
   fmt:
     name: Rustfmt
-    runs-on: Test-windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
@@ -38,7 +38,7 @@ jobs:
 
   clippy:
     name: Clippy
-    runs-on: Test-windows
+    runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
