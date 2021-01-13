@@ -3,6 +3,8 @@ use async_trait::async_trait;
 use bytes::{BufMut, BytesMut};
 use futures::{SinkExt, StreamExt};
 use std::{io, str};
+#[cfg(target_family = "windows")]
+use tokio::sync::Mutex;
 use tokio::time::{timeout, Duration};
 use tokio_util::codec::{Decoder, Encoder};
 
@@ -140,6 +142,9 @@ pub trait FramedDriver {
 const TIMEOUT: u64 = 10;
 
 pub struct FramedSerialDriver {
+    #[cfg(target_family = "windows")]
+    framed_port: Mutex<tokio_util::codec::Framed<tokio_serial::Serial, LssCodec>>,
+    #[cfg(not(target_family = "windows"))]
     framed_port: tokio_util::codec::Framed<tokio_serial::Serial, LssCodec>,
 }
 
@@ -153,6 +158,9 @@ impl FramedSerialDriver {
         let serial_port = tokio_serial::Serial::from_path(port, &settings)
             .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
+            #[cfg(target_family = "windows")]
+            framed_port: Mutex::new(LssCodec.framed(serial_port)),
+            #[cfg(not(target_family = "windows"))]
             framed_port: LssCodec.framed(serial_port),
         })
     }
@@ -166,6 +174,9 @@ impl FramedSerialDriver {
         let serial_port = tokio_serial::Serial::from_path(port, &settings)
             .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
+            #[cfg(target_family = "windows")]
+            framed_port: Mutex::new(LssCodec.framed(serial_port)),
+            #[cfg(not(target_family = "windows"))]
             framed_port: LssCodec.framed(serial_port),
         })
     }
@@ -174,15 +185,22 @@ impl FramedSerialDriver {
 #[async_trait]
 impl FramedDriver for FramedSerialDriver {
     async fn send(&mut self, command: LssCommand) -> DriverResult<()> {
-        self.framed_port
-            .send(command)
+        #[cfg(not(target_family = "windows"))]
+        let mut port = self.framed_port;
+        #[cfg(target_family = "windows")]
+        let mut port = self.framed_port.lock().await;
+        port.send(command)
             .await
             .map_err(|_| LssDriverError::SendingError)?;
         Ok(())
     }
 
     async fn receive(&mut self) -> DriverResult<LssResponse> {
-        let response = timeout(Duration::from_millis(TIMEOUT), self.framed_port.next())
+        #[cfg(not(target_family = "windows"))]
+        let mut port = self.framed_port;
+        #[cfg(target_family = "windows")]
+        let mut port = self.framed_port.lock().await;
+        let response = timeout(Duration::from_millis(TIMEOUT), port.next())
             .await
             .map_err(|_| LssDriverError::TimeoutError)?
             .ok_or_else(|| {
