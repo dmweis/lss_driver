@@ -10,7 +10,7 @@ struct Args {
     #[clap(
         about = "ID of the motor you want to move. Default BROADCAST",
         long = "id",
-        default_value = "1"
+        default_value = "254"
     )]
     id: u8,
 }
