@@ -54,6 +54,12 @@ This package shouldn't depend on any native libraries.
 Rust [serialport](https://gitlab.com/susurrus/serialport-rs) depends on `pkg-config` and `libudev-dev` on GNU Linux but they should be disabled for this crate.  
 If you do run into issues with them failing it may be worth looking into their dependencies and raising an issue here.
 
+## Changelog
+
+### Version 0.5.0 - (2020-01-13)
+
+- Windows support
+
 ## Disclaimer
 
 _This software is not officially endorsed by Lynxmotion or Robotshop!_
