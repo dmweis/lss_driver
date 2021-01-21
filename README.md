@@ -4,7 +4,7 @@
 [![Docs](https://docs.rs/lss_driver/badge.svg)](https://docs.rs/lss_driver)
 [![Rust](https://github.com/dmweis/lss_driver/workflows/Rust/badge.svg)](https://github.com/dmweis/lss_driver/actions)
 [![Rust-windows](https://github.com/dmweis/lss_driver/workflows/Rust-windows/badge.svg)](https://github.com/dmweis/lss_driver/actions)
-[![codecov](https://codecov.io/gh/dmweis/lss_driver/branch/master/graph/badge.svg)](https://codecov.io/gh/dmweis/lss_driver)
+[![codecov](https://codecov.io/gh/dmweis/lss_driver/branch/main/graph/badge.svg)](https://codecov.io/gh/dmweis/lss_driver)
 [![License](https://img.shields.io/crates/l/lss_driver)](https://github.com/dmweis/lss_driver)
 
 This crate provides an asynchronous serial driver the the Lynxmotion smart servos.
@@ -27,7 +27,7 @@ The driver is based on [tokio-serial](https://github.com/berkowski/tokio-serial)
 
 ## Usage
 
-This crate comes with multiple [examples](https://github.com/dmweis/lss_driver/tree/master/examples).  
+This crate comes with multiple [examples](https://github.com/dmweis/lss_driver/tree/main/examples).  
 These are a good start if you want to learn how to use it.
 
 ```rust
