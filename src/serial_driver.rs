@@ -1,4 +1,4 @@
-use crate::message_types::LssDriverError;
+use crate::message_types::{CommandModifier, LssDriverError};
 use async_trait::async_trait;
 use bytes::{BufMut, BytesMut};
 use futures::{SinkExt, StreamExt};
@@ -19,6 +19,17 @@ impl LssCommand {
     pub fn with_param(id: u8, cmd: &str, val: i32) -> LssCommand {
         LssCommand {
             message: format!("#{}{}{}\r", id, cmd, val),
+        }
+    }
+
+    pub fn with_param_modifier(
+        id: u8,
+        cmd: &str,
+        val: i32,
+        modifier: CommandModifier,
+    ) -> LssCommand {
+        LssCommand {
+            message: format!("#{}{}{}{}\r", id, cmd, val, modifier.to_msg()),
         }
     }
 

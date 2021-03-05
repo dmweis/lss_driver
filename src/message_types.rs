@@ -1,4 +1,4 @@
-use std::str;
+use std::{str, time::Duration};
 use thiserror::Error;
 
 /// Driver errors
@@ -156,6 +156,55 @@ pub enum LedBlinking {
     Free = 16,
     Travelling = 32,
     AlwaysBlink = 63,
+}
+
+/// Modifiers used for some commands
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum CommandModifier {
+    /// only for P commands
+    /// microseconds per second
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HSpeed28S2CSD29modifier)
+    Speed(u32),
+    /// Only for D or MD commands
+    /// degrees per second
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HSpeed28S2CSD29modifier)
+    SpeedDegrees(u32),
+    /// Useful for (P, D, MD) actions
+    /// in milliseconds
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HTimedmove28T29modifier)
+    Timed(u32),
+    /// Useful for (P, D, MD) actions
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HTimedmove28T29modifier)
+    TimedDuration(Duration),
+    /// Useful with (D; MD; WD; WR)
+    /// in mA
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HCurrentHalt26Hold28CH29modifier)
+    CurrentHold(u32),
+    /// Useful with (D; MD; WD; WR.)
+    /// in mA
+    /// [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HCurrentLimp28CL29modifier)
+    CurrentLimp(u32),
+    /// Special modifier that allows you to use modifiable commands with no modifiers
+    None,
+    /// Useful in case there is a new modifier that is not supported by this library
+    Custom(&'static str, i32),
+}
+
+impl CommandModifier {
+    pub fn to_msg(&self) -> String {
+        use CommandModifier::*;
+        // this is pretty inefficient because it's all using strings. But that's okay for now
+        match self {
+            Speed(speed) => format!("S{}", speed),
+            SpeedDegrees(speed) => format!("SD{}", speed),
+            Timed(time) => format!("T{}", time),
+            TimedDuration(time) => format!("T{}", time.as_millis()),
+            CurrentHold(current) => format!("CH{}", current),
+            CurrentLimp(current) => format!("CL{}", current),
+            CommandModifier::None => String::from(""),
+            Custom(text, value) => format!("{}{}", text, value),
+        }
+    }
 }
 
 #[cfg(test)]
