@@ -205,6 +205,14 @@ impl CommandModifier {
             Custom(text, value) => format!("{}{}", text, value),
         }
     }
+
+    pub fn vec_to_msg(modifiers: &[CommandModifier]) -> String {
+        let mut buffer = String::new();
+        for modifier in modifiers {
+            buffer.push_str(&modifier.to_msg());
+        }
+        buffer
+    }
 }
 
 #[cfg(test)]

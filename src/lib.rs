@@ -265,6 +265,40 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Move to absolute position in degrees with multiple modifiers
+    ///
+    /// Supports virtual positions that are more than 360 degrees
+    /// Be careful about which modifiers are supported together
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `position` - Absolute position in degrees
+    /// * `modifiers` - Array of modifiers applied to this motion. Look at the type for more info.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    /// use lss_driver::CommandModifier;
+    /// async fn async_main(){
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.move_to_position_with_modifiers(5, 180.0, &[CommandModifier::Timed(2500), CommandModifier::CurrentHold(400)]).await;
+    /// }
+    /// ```
+    pub async fn move_to_position_with_modifiers(
+        &mut self,
+        id: u8,
+        position: f32,
+        modifiers: &[CommandModifier],
+    ) -> DriverResult<()> {
+        let angle = (position * 10.0).round() as i32;
+        self.driver
+            .send(LssCommand::with_param_modifiers(id, "D", angle, modifiers))
+            .await?;
+        Ok(())
+    }
+
     /// Move to absolute position in degrees
     ///
     /// Same as `move_to_position`
@@ -918,6 +952,23 @@ mod tests {
         |mut driver: LSSDriver| async move {
             driver
                 .move_to_position_with_modifier(1, 20.0, CommandModifier::Timed(15000))
+                .await
+                .unwrap()
+        }
+    );
+    test_command!(
+        test_move_to_with_modifiers,
+        "#1D200T15000CL400\r",
+        |mut driver: LSSDriver| async move {
+            driver
+                .move_to_position_with_modifiers(
+                    1,
+                    20.0,
+                    &[
+                        CommandModifier::Timed(15000),
+                        CommandModifier::CurrentLimp(400),
+                    ],
+                )
                 .await
                 .unwrap()
         }

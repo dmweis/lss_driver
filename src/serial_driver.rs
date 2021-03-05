@@ -33,6 +33,23 @@ impl LssCommand {
         }
     }
 
+    pub fn with_param_modifiers(
+        id: u8,
+        cmd: &str,
+        val: i32,
+        modifiers: &[CommandModifier],
+    ) -> LssCommand {
+        LssCommand {
+            message: format!(
+                "#{}{}{}{}\r",
+                id,
+                cmd,
+                val,
+                CommandModifier::vec_to_msg(modifiers)
+            ),
+        }
+    }
+
     pub fn simple(id: u8, cmd: &str) -> LssCommand {
         LssCommand {
             message: format!("#{}{}\r", id, cmd),
