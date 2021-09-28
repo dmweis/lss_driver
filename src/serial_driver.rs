@@ -6,6 +6,7 @@ use std::{io, str};
 #[cfg(target_family = "windows")]
 use tokio::sync::Mutex;
 use tokio::time::{timeout, Duration};
+use tokio_serial::SerialPortBuilderExt;
 use tokio_util::codec::{Decoder, Encoder};
 
 type DriverResult<T> = Result<T, LssDriverError>;
@@ -171,20 +172,18 @@ const TIMEOUT: u64 = 10;
 
 pub struct FramedSerialDriver {
     #[cfg(target_family = "windows")]
-    framed_port: Mutex<tokio_util::codec::Framed<tokio_serial::Serial, LssCodec>>,
+    framed_port: Mutex<tokio_util::codec::Framed<tokio_serial::SerialStream, LssCodec>>,
     #[cfg(not(target_family = "windows"))]
-    framed_port: tokio_util::codec::Framed<tokio_serial::Serial, LssCodec>,
+    framed_port: tokio_util::codec::Framed<tokio_serial::SerialStream, LssCodec>,
 }
 
 impl FramedSerialDriver {
     pub fn new(port: &str) -> DriverResult<FramedSerialDriver> {
-        let settings = tokio_serial::SerialPortSettings {
-            baud_rate: 115200,
-            timeout: std::time::Duration::from_millis(TIMEOUT),
-            ..Default::default()
-        };
-        let serial_port = tokio_serial::Serial::from_path(port, &settings)
+        let serial_port = tokio_serial::new(port, 115200)
+            .timeout(std::time::Duration::from_millis(TIMEOUT))
+            .open_native_async()
             .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
+
         Ok(FramedSerialDriver {
             #[cfg(target_family = "windows")]
             framed_port: Mutex::new(LssCodec.framed(serial_port)),
@@ -194,12 +193,9 @@ impl FramedSerialDriver {
     }
 
     pub fn with_baud_rate(port: &str, baud_rate: u32) -> DriverResult<FramedSerialDriver> {
-        let settings = tokio_serial::SerialPortSettings {
-            baud_rate,
-            timeout: std::time::Duration::from_millis(TIMEOUT),
-            ..Default::default()
-        };
-        let serial_port = tokio_serial::Serial::from_path(port, &settings)
+        let serial_port = tokio_serial::new(port, baud_rate)
+            .timeout(std::time::Duration::from_millis(TIMEOUT))
+            .open_native_async()
             .map_err(|_| LssDriverError::FailedOpeningSerialPort)?;
         Ok(FramedSerialDriver {
             #[cfg(target_family = "windows")]
