@@ -21,11 +21,11 @@ bytes = "1.0"
 tokio-util = { version = "0.6", features = ["codec"], default-features = false }
 async-trait = "0.1"
 thiserror = "^1.0"
-tokio = { version = "1.0.1", features = ["time"], default-features = false }
+tokio = { version = "1.12", features = ["time"], default-features = false }
 
 
 [dev-dependencies]
-tokio = { version = "1.0", features = ["macros", "rt-multi-thread"], default-features = false }
+tokio = { version = "1.12", features = ["macros", "rt-multi-thread"], default-features = false }
 clap = "3.0.0-beta.1"
 async-std = "1.6"
 ctrlc = "3.1"
