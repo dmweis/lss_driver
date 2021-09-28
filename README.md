@@ -60,6 +60,10 @@ If you do run into issues with them failing it may be worth looking into their d
 
 - Windows support
 
+### Version 0.6.1 - (2021-09-28)
+
+- Tokio 1.0 support (Now also on windows!)
+
 ## Disclaimer
 
 _This software is not officially endorsed by Lynxmotion or Robotshop!_
