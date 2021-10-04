@@ -30,8 +30,7 @@ The driver is based on [tokio-serial](https://github.com/berkowski/tokio-serial)
 This crate comes with multiple [examples](https://github.com/dmweis/lss_driver/tree/main/examples).  
 These are a good start if you want to learn how to use it.
 
-```rust
-use lss_driver;
+```rust no_run
 
 #[tokio::main]
 async fn main() {
