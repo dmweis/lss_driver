@@ -763,6 +763,189 @@ impl LSSDriver {
             .await?;
         Ok(())
     }
+
+    /// Query the angular range in degrees
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularRange28AR29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of the servo you want to query
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     let angular_range = driver.query_angular_range(5).await.unwrap();
+    /// }
+    /// ```
+    pub async fn query_angular_range(&mut self, id: u8) -> DriverResult<f32> {
+        // Response looks like *5QAR1800 where 1800 is range in 1/10 degrees
+        // Contrary what the wiki says, which is *5AR1800 as example, the servo I used (HT1) returns
+        // *5QAR1800
+        self.driver.send(LssCommand::simple(id, "QAR")).await?;
+
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate("QAR")?;
+
+        Ok(value as f32 / 10.0)
+    }
+
+    /// Set the angular range in degrees
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularRange28AR29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of the servo you want to control
+    /// * `range` - Angular range in degrees
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.set_angular_range(5, 180.0).await;
+    /// }
+    pub async fn set_angular_range(&mut self, id: u8, range: f32) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param(id, "CAR", (range * 10.) as i32))
+            .await?;
+
+        Ok(())
+    }
+
+    /// Queries the position in µs.
+    ///
+    /// When the position is inside the angular range it will return a value between 500 and 2500,
+    /// when the position is outside the angular range it will return either -500 or -2500.
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HPositioninPWM28P29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of the servo you want to control
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     let pwm_position = driver.query_pwm_position(5).await.unwrap();
+    /// }
+    /// ```
+    pub async fn query_pwm_position(&mut self, id: u8) -> DriverResult<i32> {
+        // Response looks like *5QP2334 where 2335 is in µs
+        self.driver.send(LssCommand::simple(id, "QP")).await?;
+
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate("QP")?;
+
+        Ok(value)
+    }
+
+    /// Move to PWM position in µs.
+    ///
+    /// You can use [set_angular_range](LSSDriver::set_angular_range) to range.
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HPositioninPWM28P29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of the servo you want to control
+    /// * `position` - Position in µs in the range [500,2500]
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.move_to_pwm_position(5, 2334).await;
+    /// }
+    /// ```
+    pub async fn move_to_pwm_position(&mut self, id: u8, position: i32) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param(id, "P", position))
+            .await?;
+
+        Ok(())
+    }
+
+    /// Move to PWM position in µs with modifier.
+    ///
+    /// You can use [set_angular_range](LSSDriver::set_angular_range) to range.
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HPositioninPWM28P29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of the servo you want to control
+    /// * `position` - Position in µs in the range [500,2500]
+    /// * `modifier` - Modifier applied to this motion. Look at the type for more info.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::{LSSDriver, CommandModifier};
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.move_to_pwm_position_with_modifier(5, 2334, CommandModifier::Speed(750)).await;
+    /// }
+    /// ```
+    pub async fn move_to_pwm_position_with_modifier(
+        &mut self,
+        id: u8,
+        position: i32,
+        modifier: CommandModifier,
+    ) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param_modifier(id, "P", position, modifier))
+            .await?;
+
+        Ok(())
+    }
+
+    /// Move to PWM position in µs with modifiers.
+    ///
+    /// You can use [set_angular_range](LSSDriver::set_angular_range) to range.
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HPositioninPWM28P29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of the servo you want to control
+    /// * `position` - Position in µs in the range [500,2500]
+    /// * `modifiers` - Array of modifiers applied to this motion. Look at the type for more info.
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::{LSSDriver, CommandModifier};
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.move_to_pwm_position_with_modifiers(5, 2334, &[CommandModifier::Speed(750), CommandModifier::Timed(2500)]).await;
+    /// }
+    /// ```
+    pub async fn move_to_pwm_position_with_modifiers(
+        &mut self,
+        id: u8,
+        position: i32,
+        modifiers: &[CommandModifier],
+    ) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param_modifiers(
+                id, "P", position, modifiers,
+            ))
+            .await?;
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -1226,5 +1409,59 @@ mod tests {
         test_reset,
         "#254RESET\r",
         |mut driver: LSSDriver| async move { driver.reset(BROADCAST_ID).await.unwrap() }
+    );
+
+    test_query!(
+        test_query_angular_range,
+        "#5QAR\r",
+        "*5QAR1800\r",
+        |mut driver: LSSDriver| async move { driver.query_angular_range(5).await.unwrap() },
+        180.0
+    );
+
+    test_command!(
+        test_set_angular_range,
+        "#5CAR1800\r",
+        |mut driver: LSSDriver| async move { driver.set_angular_range(5, 180.0).await.unwrap() }
+    );
+
+    test_query!(
+        test_query_pwm_position,
+        "#5QP\r",
+        "*5QP2334\r",
+        |mut driver: LSSDriver| async move { driver.query_pwm_position(5).await.unwrap() },
+        2334
+    );
+
+    test_command!(
+        test_move_to_pwm_position,
+        "#5P2334\r",
+        |mut driver: LSSDriver| async move { driver.move_to_pwm_position(5, 2334).await.unwrap() }
+    );
+
+    test_command!(
+        test_move_to_pwm_position_with_modifier,
+        "#5P2334S750\r",
+        |mut driver: LSSDriver| async move {
+            driver
+                .move_to_pwm_position_with_modifier(5, 2334, CommandModifier::Speed(750))
+                .await
+                .unwrap()
+        }
+    );
+
+    test_command!(
+        test_move_to_pwm_position_with_modifiers,
+        "#5P2334S750T2500\r",
+        |mut driver: LSSDriver| async move {
+            driver
+                .move_to_pwm_position_with_modifiers(
+                    5,
+                    2334,
+                    &[CommandModifier::Speed(750), CommandModifier::Timed(2500)],
+                )
+                .await
+                .unwrap()
+        }
     );
 }
