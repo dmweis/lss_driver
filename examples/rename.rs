@@ -1,8 +1,8 @@
 use async_std::task::sleep;
-use clap::Clap;
+use clap::Parser;
 use std::time::Duration;
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap()]
 struct Args {
     #[clap(about = "Serial port to use")]

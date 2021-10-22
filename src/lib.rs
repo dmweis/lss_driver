@@ -764,6 +764,32 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Query origin offset in degrees
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HOriginOffset28O29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to query
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     let origin_offset = driver.query_origin_offset(5).await;
+    /// }
+    /// ```
+    pub async fn query_origin_offset(&mut self, id: u8) -> DriverResult<f32> {
+        // response messages looks like *5QO-13
+        // Response is in tenths of degrees
+        self.driver.send(LssCommand::simple(id, "QO")).await?;
+        let response = self.driver.receive().await?;
+        let (_, value) = response.separate("QO")?;
+        Ok(value as f32 / 10.0)
+    }
+
     /// Query the angular range in degrees
     ///
     /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HAngularRange28AR29)
@@ -772,8 +798,7 @@ impl LSSDriver {
     ///
     /// * `id` - ID of the servo you want to query
     ///
-    /// # Example
-    ///
+    ///  /// # Example
     /// ```no_run
     /// use lss_driver::LSSDriver;
     ///
@@ -847,6 +872,35 @@ impl LSSDriver {
         let (_, value) = response.separate("QP")?;
 
         Ok(value)
+    }
+
+    /// Set origin offset in degrees
+    ///
+    /// Read more on the [wiki](https://www.robotshop.com/info/wiki/lynxmotion/view/lynxmotion-smart-servo/lss-communication-protocol/#HOriginOffset28O29)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `origin_offset` - Offset from factory 0 in degrees
+    ///
+    /// # Example
+    /// ```no_run
+    /// use lss_driver::LSSDriver;
+    ///
+    /// async fn async_main() {
+    ///     let mut driver = LSSDriver::with_baud_rate("COM1", 115200).unwrap();
+    ///     driver.set_origin_offset(5, -1.3).await;
+    /// }
+    /// ```
+    pub async fn set_origin_offset(&mut self, id: u8, origin_offset: f32) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param(
+                id,
+                "CO",
+                (origin_offset * 10.) as i32,
+            ))
+            .await?;
+        Ok(())
     }
 
     /// Move to PWM position in µs.
@@ -1409,6 +1463,20 @@ mod tests {
         test_reset,
         "#254RESET\r",
         |mut driver: LSSDriver| async move { driver.reset(BROADCAST_ID).await.unwrap() }
+    );
+
+    test_query_float!(
+        test_query_origin_offset,
+        "#5QO\r",
+        "*5QO-13\r",
+        |mut driver: LSSDriver| async move { driver.query_origin_offset(5).await.unwrap() },
+        -1.3
+    );
+
+    test_command!(
+        test_set_origin_offset,
+        "#5CO-24\r",
+        |mut driver: LSSDriver| async move { driver.set_origin_offset(5, -2.4).await.unwrap() }
     );
 
     test_query!(

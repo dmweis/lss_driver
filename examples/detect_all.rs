@@ -1,6 +1,6 @@
-use clap::Clap;
+use clap::Parser;
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap()]
 struct Args {
     #[clap(about = "Serial port to use")]
