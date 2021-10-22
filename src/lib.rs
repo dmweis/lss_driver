@@ -1479,7 +1479,7 @@ mod tests {
         |mut driver: LSSDriver| async move { driver.set_origin_offset(5, -2.4).await.unwrap() }
     );
 
-    test_query!(
+    test_query_float!(
         test_query_angular_range,
         "#5QAR\r",
         "*5QAR1800\r",
