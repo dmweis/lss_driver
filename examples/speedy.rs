@@ -1,11 +1,11 @@
 use async_std::task::sleep;
 // use std::thread::sleep;
-use clap::Clap;
+use clap::Parser;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap()]
 struct Args {
     #[clap(about = "Serial port to use")]

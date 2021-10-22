@@ -1,7 +1,7 @@
-use clap::Clap;
+use clap::Parser;
 use std::io::{self, BufRead};
 
-#[derive(Clap)]
+#[derive(Parser)]
 #[clap()]
 struct Args {
     #[clap(about = "Serial port to use")]
