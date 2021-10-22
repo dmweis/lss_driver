@@ -2,7 +2,7 @@
 name = "lss_driver"
 version = "0.6.0"
 authors = ["David Michael Weis <dweis7@gmail.com>"]
-edition = "2018"
+edition = "2021"
 
 description = "Driver for Lynxmotion LSS servos"
 documentation = "https://docs.rs/lss_driver"
