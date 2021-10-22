@@ -1286,7 +1286,7 @@ mod tests {
         |mut driver: LSSDriver| async move { driver.reset(BROADCAST_ID).await.unwrap() }
     );
 
-    test_query!(
+    test_query_float!(
         test_query_origin_offset,
         "#5QO\r",
         "*5QO-13\r",
