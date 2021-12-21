@@ -1,15 +1,15 @@
-use clap::Parser;
+use structopt::StructOpt;
 
-#[derive(Parser)]
-#[clap()]
+#[derive(StructOpt, Debug)]
+#[structopt()]
 struct Args {
-    #[clap(about = "Serial port to use")]
+    #[structopt(about = "Serial port to use")]
     port: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Args = Args::parse();
+    let args: Args = Args::from_args();
     let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
     driver
         .move_to_position(lss_driver::BROADCAST_ID, 0.0)

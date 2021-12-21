@@ -1,20 +1,20 @@
 use async_std::task::sleep;
 // use std::thread::sleep;
-use clap::Parser;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
+use structopt::StructOpt;
 
-#[derive(Parser)]
-#[clap()]
+#[derive(StructOpt, Debug)]
+#[structopt()]
 struct Args {
-    #[clap(about = "Serial port to use")]
+    #[structopt(about = "Serial port to use")]
     port: String,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Args = Args::parse();
+    let args: Args = Args::from_args();
 
     let running = Arc::new(AtomicBool::new(true));
     let running_handle = running.clone();

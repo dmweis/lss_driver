@@ -26,7 +26,7 @@ tokio = { version = "1.12", features = ["time"], default-features = false }
 
 [dev-dependencies]
 tokio = { version = "1.12", features = ["macros", "rt-multi-thread"], default-features = false }
-clap = "3.0.0-beta.1"
+structopt = "0.3"
 async-std = "1.6"
 ctrlc = "3.1"
 approx = "0.5"

@@ -1,19 +1,19 @@
 use async_std::task::sleep;
-use clap::Parser;
 use std::time::Duration;
+use structopt::StructOpt;
 
-#[derive(Parser)]
-#[clap()]
+#[derive(StructOpt, Debug)]
+#[structopt()]
 struct Args {
-    #[clap(about = "Serial port to use")]
+    #[structopt(about = "Serial port to use")]
     port: String,
-    #[clap(about = "ID you want to give to the connected servo", long = "id")]
+    #[structopt(about = "ID you want to give to the connected servo", long = "id")]
     id: u8,
 }
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let args: Args = Args::parse();
+    let args: Args = Args::from_args();
     let mut driver = lss_driver::LSSDriver::new(&args.port).unwrap();
     driver
         .set_color(lss_driver::BROADCAST_ID, lss_driver::LedColor::Red)
