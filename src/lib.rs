@@ -305,6 +305,30 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// Set continuous rotation speed in °/s with modifier
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `speed` - Speed in °/s
+    /// * `modifier` - Modifier applied to this motion. Look at the type for more info.
+    pub async fn set_rotation_speed_with_modifier(
+        &mut self,
+        id: u8,
+        speed: f32,
+        modifier: CommandModifier,
+    ) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param_modifier(
+                id,
+                "WD",
+                speed as i32,
+                modifier,
+            ))
+            .await?;
+        Ok(())
+    }
+
     /// Query absolute rotation speed in °/s
     ///
     /// # Arguments
@@ -1177,6 +1201,16 @@ mod tests {
         test_set_rotation_speed_degrees,
         "#5WD90\r",
         |mut driver: LSSDriver| async move { driver.set_rotation_speed(5, 90.0).await.unwrap() }
+    );
+    test_command!(
+        test_set_rotation_speed_degrees_with_modifier,
+        "#1WD90T15000\r",
+        |mut driver: LSSDriver| async move {
+            driver
+                .set_rotation_speed_with_modifier(1, 90.0, CommandModifier::Timed(15000))
+                .await
+                .unwrap()
+        }
     );
     test_query_float!(
         test_query_rotation_speed_degrees,
