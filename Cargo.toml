@@ -1,6 +1,6 @@
 [package]
 name = "lss_driver"
-version = "0.7.0"
+version = "0.8.0"
 authors = ["David Michael Weis <dweis7@gmail.com>"]
 edition = "2021"
 
@@ -25,7 +25,10 @@ tokio = { version = "1.12", features = ["time"], default-features = false }
 
 
 [dev-dependencies]
-tokio = { version = "1.12", features = ["macros", "rt-multi-thread"], default-features = false }
+tokio = { version = "1.12", features = [
+    "macros",
+    "rt-multi-thread",
+], default-features = false }
 structopt = "0.3"
 async-std = "1.6"
 ctrlc = "3.1"
