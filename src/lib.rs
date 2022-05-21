@@ -143,7 +143,7 @@ impl LSSDriver {
         self.driver.send(LssCommand::simple(id, "QLED")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("QLED")?;
-        Ok(LedColor::from_i32(value)?)
+        LedColor::from_i32(value)
     }
 
     /// Move to absolute position in degrees
@@ -352,7 +352,7 @@ impl LSSDriver {
         self.driver.send(LssCommand::simple(id, "Q")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("Q")?;
-        Ok(MotorStatus::from_i32(value)?)
+        MotorStatus::from_i32(value)
     }
 
     /// Query safety status of a motor
@@ -366,7 +366,7 @@ impl LSSDriver {
         self.driver.send(LssCommand::simple(id, "Q1")).await?;
         let response = self.driver.receive().await?;
         let (_, value) = response.separate("Q")?;
-        Ok(SafeModeStatus::from_i32(value)?)
+        SafeModeStatus::from_i32(value)
     }
 
     /// Set motion profile enabled or disabled.
