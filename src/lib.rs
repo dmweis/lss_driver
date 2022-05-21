@@ -134,6 +134,19 @@ impl LSSDriver {
         Ok(())
     }
 
+    /// configure color for motor with id (value will be saved)
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - ID of servo you want to control
+    /// * `color` - Color to set
+    pub async fn configure_color(&mut self, id: u8, color: LedColor) -> DriverResult<()> {
+        self.driver
+            .send(LssCommand::with_param(id, "CLED", color as i32))
+            .await?;
+        Ok(())
+    }
+
     /// Query color of servo LED
     ///
     /// # Arguments
@@ -1257,6 +1270,11 @@ mod tests {
         test_set_led,
         "#5LED3\r",
         |mut driver: LSSDriver| async move { driver.set_color(5, LedColor::Blue).await.unwrap() }
+    );
+    test_command!(
+        test_configure_led,
+        "#5CLED3\r",
+        |mut driver: LSSDriver| async move { driver.configure_color(5, LedColor::Blue).await.unwrap() }
     );
     test_query!(
         test_query_led,
